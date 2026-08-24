@@ -263,8 +263,14 @@
     100%{ transform: scale(1.6); opacity: 1; }
   }
 
+  .slash-wrap{
+    position: absolute;
+    pointer-events: none;
+  }
   .slash{
     position: absolute;
+    left: 0;
+    bottom: 0;
     width: 30px;
     height: 4px;
     margin-left: -6px;
@@ -507,13 +513,17 @@
     nextSlash = direction === 'down' ? 'up' : 'down';
     lastSlashTime = performance.now();
 
+    const wrap = document.createElement('div');
+    wrap.className = 'slash-wrap';
+    wrap.style.left = (charX + facing * SLASH_REACH) + 'px';
+    wrap.style.bottom = torsoY() + 'px';
+    if (facing === -1) wrap.style.transform = 'scaleX(-1)'; // flip lives on the wrapper so it doesn't fight the rotate animation below
+
     const el = document.createElement('div');
     el.className = 'slash slash-' + direction;
-    el.style.left = (charX + facing * SLASH_REACH) + 'px';
-    el.style.bottom = torsoY() + 'px';
-    if (facing === -1) el.style.transform = 'scaleX(-1)';
-    world.appendChild(el);
-    setTimeout(() => el.remove(), 240);
+    wrap.appendChild(el);
+    world.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 240);
   }
 
   function startMageCharge(){
