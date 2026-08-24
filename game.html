@@ -447,6 +447,53 @@
     .star-pos{ transition: none; }
     .intro-text, .scene, .back-link{ animation: none; opacity: 1; }
   }
+
+  /* ============ CREATOR MODE — strip this whole block (CSS + HTML + JS) before ship ============ */
+  .creator-panel{
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    background: rgba(10,10,10,0.92);
+    border: 1px solid var(--brass);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: var(--white);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 168px;
+  }
+  .creator-panel.show{ display: flex; }
+  .creator-panel .creator-label{
+    text-transform: uppercase;
+    color: var(--brass);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+  .creator-panel .creator-group{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .creator-panel button{
+    font-family: inherit;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--brass-dim);
+    color: var(--white);
+    padding: 7px 10px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .creator-panel button:hover{ border-color: var(--brass); background: rgba(200,162,74,0.12); }
+  /* ============ END CREATOR MODE CSS ============ */
 </style>
 </head>
 <body>
@@ -539,6 +586,17 @@
     <button class="dialogue-continue" id="dialogueContinue">Continue →</button>
   </div>
 </div>
+
+<!-- ============ CREATOR MODE — strip this whole block (CSS + HTML + JS) before ship ============ -->
+<div class="creator-panel" id="creatorPanel">
+  <div class="creator-label">Creator Mode</div>
+  <div class="creator-group">
+    <button data-skip-class="ranger">→ Town as Ranger</button>
+    <button data-skip-class="mage">→ Town as Mage</button>
+    <button data-skip-class="warrior">→ Town as Warrior</button>
+  </div>
+</div>
+<!-- ============ END CREATOR MODE HTML ============ -->
 
 <script>
   // ---------- starfield ----------
@@ -767,6 +825,34 @@
   document.getElementById('dialogueContinue').addEventListener('click', () => {
     window.location.href = 'town.html';
   });
+</script>
+
+<script>
+  // ============ CREATOR MODE — strip this whole block before ship ============
+  (function(){
+    const panel = document.getElementById('creatorPanel');
+
+    window.addEventListener('keydown', e => {
+      if (e.key !== '`') return;
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      panel.classList.toggle('show');
+    });
+
+    panel.querySelectorAll('[data-skip-class]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cls = btn.dataset.skipClass;
+        try{
+          localStorage.setItem('eiken_save', JSON.stringify({
+            class: cls, name: 'Dev', gender: ''
+          }));
+        }catch(e){}
+        window.location.href = 'town.html';
+      });
+    });
+  })();
+  // ============ END CREATOR MODE ============
 </script>
 
 </body>

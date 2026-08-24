@@ -284,6 +284,54 @@
     0%{ transform: rotate(65deg); opacity: 1; }
     100%{ transform: rotate(-65deg); opacity: 0; }
   }
+
+  /* ============ CREATOR MODE — strip this whole block (CSS + HTML + JS) before ship ============ */
+  .creator-panel{
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    background: rgba(10,10,10,0.92);
+    border: 1px solid #c8a24a;
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: #f4f1ea;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 168px;
+  }
+  .creator-panel.show{ display: flex; }
+  .creator-panel .creator-label{
+    text-transform: uppercase;
+    color: #c8a24a;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+  .creator-panel .creator-group{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .creator-panel button{
+    font-family: inherit;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid #93783a;
+    color: #f4f1ea;
+    padding: 7px 10px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .creator-panel button:hover{ border-color: #c8a24a; background: rgba(200,162,74,0.12); }
+  .creator-panel button.active{ border-color: #c8a24a; background: rgba(200,162,74,0.22); }
+  /* ============ END CREATOR MODE CSS ============ */
 </style>
 </head>
 <body>
@@ -336,6 +384,18 @@
 <div class="arrival" id="arrival">
   <p id="arrivalText">You've reached the port.<br>(Nothing built past here yet.)</p>
 </div>
+
+<!-- ============ CREATOR MODE — strip this whole block (CSS + HTML + JS) before ship ============ -->
+<div class="creator-panel" id="creatorPanel">
+  <div class="creator-label">Creator Mode</div>
+  <div class="creator-group" id="creatorClassGroup">
+    <button data-set-class="ranger">Ranger</button>
+    <button data-set-class="mage">Mage</button>
+    <button data-set-class="warrior">Warrior</button>
+  </div>
+  <button id="creatorSkipBtn">Skip to next stage →</button>
+</div>
+<!-- ============ END CREATOR MODE HTML ============ -->
 
 <script>
   // ---------- load save data from the naming sequence ----------
@@ -565,6 +625,43 @@
     requestAnimationFrame(update);
   }
   update();
+</script>
+
+<script>
+  // ============ CREATOR MODE — strip this whole block before ship ============
+  (function(){
+    const panel = document.getElementById('creatorPanel');
+    const classButtons = document.querySelectorAll('#creatorClassGroup [data-set-class]');
+    const skipBtn = document.getElementById('creatorSkipBtn');
+
+    function refreshActiveClassButton(){
+      classButtons.forEach(b => b.classList.toggle('active', b.dataset.setClass === save.class));
+    }
+    refreshActiveClassButton();
+
+    window.addEventListener('keydown', e => {
+      if (e.key !== '`') return;
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      panel.classList.toggle('show');
+    });
+
+    classButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // live-switch only — does not touch eiken_save, so a reload restores the real save
+        save.class = btn.dataset.setClass;
+        document.documentElement.style.setProperty('--accent', accents[save.class] || '#93783a');
+        refreshActiveClassButton();
+      });
+    });
+
+    skipBtn.addEventListener('click', () => {
+      // nudge the character to the next checkpoint and let the normal arrival logic fire
+      charX = portTriggerX;
+    });
+  })();
+  // ============ END CREATOR MODE ============
 </script>
 
 </body>
