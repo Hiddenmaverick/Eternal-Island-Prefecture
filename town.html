@@ -66,7 +66,6 @@
     will-change: transform;
   }
 
-  /* distant town silhouettes — flat placeholder shapes, swap for real art later */
   .town-silhouette{
     position: absolute;
     bottom: 90px;
@@ -163,6 +162,10 @@
     50%{ transform: translateY(-3px); }
   }
   .character.facing-left{ transform: translateX(-50%) scaleX(-1); }
+  .character.jumping .body{
+    animation: none;
+    transform: scaleY(1.08) scaleX(0.94);
+  }
 
   .controls-hint{
     position: fixed;
@@ -221,6 +224,66 @@
     font-size: 1.2rem;
     max-width: 34ch;
   }
+
+  /* ---------- COMBAT ---------- */
+  .projectile{
+    position: absolute;
+    pointer-events: none;
+  }
+  .arrow-shot{
+    width: 26px;
+    height: 5px;
+    background: linear-gradient(to right, transparent, #ece3cd 30%, #ece3cd);
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(236,227,205,0.7);
+  }
+  .spell-shot{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #a9c3ff, #5a6f9e 70%);
+    box-shadow: 0 0 14px rgba(90,111,158,0.8);
+  }
+
+  .charge-ring{
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    border: 2px solid #5a6f9e;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: scale(0.2);
+    opacity: 0.7;
+  }
+  .charge-ring.charging{
+    animation: chargeGrow 3s linear forwards;
+  }
+  @keyframes chargeGrow{
+    0%{ transform: scale(0.2); opacity: 0.5; }
+    100%{ transform: scale(1.6); opacity: 1; }
+  }
+
+  .slash{
+    position: absolute;
+    width: 30px;
+    height: 4px;
+    margin-left: -6px;
+    background: linear-gradient(to right, transparent, #f4f1ea, transparent);
+    border-radius: 2px;
+    transform-origin: 10% 50%;
+    pointer-events: none;
+  }
+  .slash.slash-down{ animation: slashDown 0.22s ease-out forwards; }
+  .slash.slash-up{ animation: slashUp 0.22s ease-out forwards; }
+  @keyframes slashDown{
+    0%{ transform: rotate(-65deg); opacity: 1; }
+    100%{ transform: rotate(65deg); opacity: 0; }
+  }
+  @keyframes slashUp{
+    0%{ transform: rotate(65deg); opacity: 1; }
+    100%{ transform: rotate(-65deg); opacity: 0; }
+  }
 </style>
 </head>
 <body>
@@ -262,9 +325,11 @@
   </div>
 </div>
 
-<p class="controls-hint">← → or A / D to walk</p>
+<p class="controls-hint">← → or A / D to walk · ↑ or W to jump · Space to attack</p>
 <div class="touch-controls">
   <button id="leftBtn">←</button>
+  <button id="jumpBtn">↑</button>
+  <button id="attackBtn">⚔</button>
   <button id="rightBtn">→</button>
 </div>
 
@@ -297,18 +362,164 @@
   let arrived = false;
 
   const keys = {};
-  window.addEventListener('keydown', e => { keys[e.key] = true; });
-  window.addEventListener('keyup', e => { keys[e.key] = false; });
+  window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+      e.preventDefault();
+      tryJump();
+    }
+    if (e.key === ' ') {
+      e.preventDefault(); // stop the page from scrolling on spacebar
+      if (!e.repeat) handleAttackStart();
+    }
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key] = false;
+    if (e.key === ' ') handleAttackEnd();
+  });
 
   const leftBtn = document.getElementById('leftBtn');
   const rightBtn = document.getElementById('rightBtn');
+  const jumpBtn = document.getElementById('jumpBtn');
+  const attackBtn = document.getElementById('attackBtn');
   let touchLeft = false, touchRight = false;
   leftBtn.addEventListener('touchstart', e => { e.preventDefault(); touchLeft = true; });
   leftBtn.addEventListener('touchend', () => touchLeft = false);
   rightBtn.addEventListener('touchstart', e => { e.preventDefault(); touchRight = true; });
   rightBtn.addEventListener('touchend', () => touchRight = false);
+  jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); tryJump(); });
+  attackBtn.addEventListener('touchstart', e => { e.preventDefault(); handleAttackStart(); });
+  attackBtn.addEventListener('touchend', e => { e.preventDefault(); handleAttackEnd(); });
 
-  const SPEED = 3.2;
+  // ---------- jump physics ----------
+  const GROUND_BOTTOM = 90;
+  const GRAVITY = 0.12;
+  const JUMP_POWER = 5;
+  let jumpHeight = 0;
+  let jumpVelocity = 0;
+  let isJumping = false;
+
+  function tryJump(){
+    if (isJumping || arrived) return;
+    isJumping = true;
+    jumpVelocity = JUMP_POWER;
+  }
+
+  // ---------- combat ----------
+  const projectiles = []; // {el, x, vx}
+  const ARROW_SPEED = 9;
+  const SPELL_SPEED = 6;
+  const CHARGE_TIME = 3000;
+  const RANGER_COOLDOWN = 1300; // ms between shots
+  const WARRIOR_COOLDOWN = 500; // ms before the next swing can trigger
+  const SLASH_REACH = 24; // distance from character the swing is anchored — this is the effective hitbox range
+
+  let isCharging = false;
+  let chargeStart = 0;
+  let chargeRingEl = null;
+  let lastSlashTime = 0;
+  let lastRangerShot = 0;
+  let nextSlash = 'down';
+
+  function torsoY(){
+    return GROUND_BOTTOM + jumpHeight + 22;
+  }
+
+  function spawnProjectile(className, speedMultiplier){
+    const el = document.createElement('div');
+    el.className = 'projectile ' + className;
+    const startX = charX + facing * 18;
+    el.style.left = startX + 'px';
+    el.style.bottom = torsoY() + 'px';
+    world.appendChild(el);
+    projectiles.push({ el, x: startX, vx: speedMultiplier * facing });
+  }
+
+  function fireRangerArrow(){
+    spawnProjectile('arrow-shot', ARROW_SPEED);
+  }
+
+  function fireMageSpell(){
+    spawnProjectile('spell-shot', SPELL_SPEED);
+  }
+
+  function doWarriorSlash(){
+    const direction = nextSlash;
+    nextSlash = direction === 'down' ? 'up' : 'down';
+    lastSlashTime = performance.now();
+
+    const el = document.createElement('div');
+    el.className = 'slash slash-' + direction;
+    el.style.left = (charX + facing * SLASH_REACH) + 'px';
+    el.style.bottom = torsoY() + 'px';
+    if (facing === -1) el.style.transform = 'scaleX(-1)';
+    world.appendChild(el);
+    setTimeout(() => el.remove(), 240);
+  }
+
+  function startMageCharge(){
+    if (isCharging || arrived) return;
+    isCharging = true;
+    chargeStart = performance.now();
+    chargeRingEl = document.createElement('div');
+    chargeRingEl.className = 'charge-ring charging';
+    chargeRingEl.style.left = charX + 'px';
+    chargeRingEl.style.bottom = torsoY() + 'px';
+    world.appendChild(chargeRingEl);
+  }
+
+  function cancelMageCharge(fired){
+    isCharging = false;
+    if (chargeRingEl){
+      chargeRingEl.remove();
+      chargeRingEl = null;
+    }
+  }
+
+  function handleAttackStart(){
+    if (arrived) return;
+    const now = performance.now();
+
+    if (save.class === 'ranger'){
+      if (now - lastRangerShot < RANGER_COOLDOWN) return; // still on cooldown, input ignored
+      lastRangerShot = now;
+      fireRangerArrow();
+    } else if (save.class === 'warrior'){
+      if (now - lastSlashTime < WARRIOR_COOLDOWN) return; // still on cooldown, input ignored
+      doWarriorSlash();
+    } else if (save.class === 'mage'){
+      startMageCharge();
+    }
+  }
+
+  function handleAttackEnd(){
+    if (save.class === 'mage' && isCharging){
+      cancelMageCharge(false); // released early — no fire
+    }
+  }
+
+  function updateProjectiles(){
+    for (let i = projectiles.length - 1; i >= 0; i--){
+      const p = projectiles[i];
+      p.x += p.vx;
+      p.el.style.left = p.x + 'px';
+      if (p.x < -60 || p.x > WORLD_WIDTH + 60){
+        p.el.remove();
+        projectiles.splice(i, 1);
+      }
+    }
+  }
+
+  function updateCharge(){
+    if (!isCharging) return;
+    chargeRingEl.style.left = charX + 'px';
+    if (performance.now() - chargeStart >= CHARGE_TIME){
+      fireMageSpell();
+      cancelMageCharge(true);
+    }
+  }
+
+  const SPEED = 1.2;
   const portTriggerX = WORLD_WIDTH - 140;
 
   function update(){
@@ -322,8 +533,20 @@
       charX = Math.max(GROUND_MARGIN, Math.min(WORLD_WIDTH - GROUND_MARGIN, charX));
     }
 
+    if (isJumping){
+      jumpVelocity -= GRAVITY;
+      jumpHeight += jumpVelocity;
+      if (jumpHeight <= 0){
+        jumpHeight = 0;
+        jumpVelocity = 0;
+        isJumping = false;
+      }
+    }
+
     character.style.left = charX + 'px';
-    character.classList.toggle('walking', moving);
+    character.style.bottom = (GROUND_BOTTOM + jumpHeight) + 'px';
+    character.classList.toggle('walking', moving && !isJumping);
+    character.classList.toggle('jumping', isJumping);
     character.classList.toggle('facing-left', facing === -1);
 
     const viewportWidth = window.innerWidth;
@@ -335,6 +558,9 @@
       arrived = true;
       arrival.classList.add('show');
     }
+
+    updateProjectiles();
+    updateCharge();
 
     requestAnimationFrame(update);
   }
