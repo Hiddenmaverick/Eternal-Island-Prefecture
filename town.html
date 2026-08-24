@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eiken — 15 Years Later</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent: #93783a; /* overwritten per class by JS */
+    --sky-top: #cfe6e0;
+    --sky-bottom: #f4e9c9;
+    --ground: #3c3226;
+    --ground-top: #6b8f5a;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html, body{ height: 100%; overflow: hidden; }
+  body{
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--sky-bottom);
+    position: relative;
+  }
+
+  .hud{
+    position: fixed;
+    top: 16px; left: 20px;
+    z-index: 20;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #3c3226;
+    opacity: 0.75;
+  }
+  .hud .sub{
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+
+  .sky{
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 100%);
+    z-index: 0;
+  }
+
+  .viewport{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .world{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 320px;
+    width: 2600px;
+    will-change: transform;
+  }
+
+  /* distant town silhouettes — flat placeholder shapes, swap for real art later */
+  .town-silhouette{
+    position: absolute;
+    bottom: 90px;
+    left: 0;
+    width: 100%;
+    height: 160px;
+    display: flex;
+    align-items: flex-end;
+    gap: 26px;
+    opacity: 0.5;
+  }
+  .town-silhouette div{
+    background: #7a8b7c;
+    width: 46px;
+  }
+
+  .ground{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    background: var(--ground);
+    border-top: 6px solid var(--ground-top);
+  }
+
+  .port{
+    position: absolute;
+    bottom: 90px;
+    right: 40px;
+    width: 220px;
+    height: 130px;
+  }
+  .port .dock{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 14px;
+    background: #5b4632;
+  }
+  .port .post{
+    position: absolute;
+    bottom: 14px;
+    width: 6px;
+    height: 40px;
+    background: #4a3a29;
+  }
+  .port .post:nth-child(2){ left: 10px; }
+  .port .post:nth-child(3){ left: 200px; }
+  .port .mast{
+    position: absolute;
+    bottom: 14px;
+    left: 70px;
+    width: 4px;
+    height: 90px;
+    background: #4a3a29;
+  }
+  .port .sail{
+    position: absolute;
+    bottom: 60px;
+    left: 74px;
+    width: 60px;
+    height: 44px;
+    background: #ece3cd;
+    clip-path: polygon(0 0, 100% 20%, 0 100%);
+  }
+
+  .character{
+    position: absolute;
+    bottom: 90px;
+    width: 22px;
+    height: 46px;
+    transform: translateX(-50%);
+  }
+  .character .head{
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #ece3cd;
+    margin: 0 auto;
+  }
+  .character .body{
+    width: 20px; height: 28px;
+    border-radius: 4px;
+    background: var(--accent);
+    margin: 2px auto 0;
+    transition: transform 0.12s ease;
+  }
+  .character.walking .body{
+    animation: bob 0.32s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%, 100%{ transform: translateY(0); }
+    50%{ transform: translateY(-3px); }
+  }
+  .character.facing-left{ transform: translateX(-50%) scaleX(-1); }
+
+  .controls-hint{
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: #3c3226;
+    opacity: 0.6;
+    z-index: 20;
+    text-align: center;
+  }
+
+  .touch-controls{
+    position: fixed;
+    bottom: 20px;
+    left: 0; right: 0;
+    display: none;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 20;
+  }
+  .touch-controls button{
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    border: 1px solid #3c3226;
+    background: rgba(255,255,255,0.5);
+    font-size: 1.3rem;
+    color: #3c3226;
+  }
+  @media (hover: none) and (pointer: coarse){
+    .touch-controls{ display: flex; }
+    .controls-hint{ display: none; }
+  }
+
+  .arrival{
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    text-align: center;
+    padding: 24px;
+  }
+  .arrival.show{ opacity: 1; pointer-events: auto; }
+  .arrival p{
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: #f4f1ea;
+    font-size: 1.2rem;
+    max-width: 34ch;
+  }
+</style>
+</head>
+<body>
+
+<div class="sky"></div>
+
+<div class="hud">
+  <div id="hudName">Traveler</div>
+  <div class="sub" id="hudSub">walking toward the port</div>
+</div>
+
+<div class="viewport">
+  <div class="world" id="world">
+    <div class="town-silhouette">
+      <div style="height:90px"></div>
+      <div style="height:130px"></div>
+      <div style="height:70px"></div>
+      <div style="height:110px"></div>
+      <div style="height:80px"></div>
+      <div style="height:150px"></div>
+      <div style="height:95px"></div>
+      <div style="height:120px"></div>
+    </div>
+
+    <div class="ground"></div>
+
+    <div class="port" id="port">
+      <div class="post"></div>
+      <div class="post"></div>
+      <div class="mast"></div>
+      <div class="sail"></div>
+      <div class="dock"></div>
+    </div>
+
+    <div class="character" id="character">
+      <div class="head"></div>
+      <div class="body"></div>
+    </div>
+  </div>
+</div>
+
+<p class="controls-hint">← → or A / D to walk</p>
+<div class="touch-controls">
+  <button id="leftBtn">←</button>
+  <button id="rightBtn">→</button>
+</div>
+
+<div class="arrival" id="arrival">
+  <p id="arrivalText">You've reached the port.<br>(Nothing built past here yet.)</p>
+</div>
+
+<script>
+  // ---------- load save data from the naming sequence ----------
+  let save = { class: 'ranger', name: 'Traveler', gender: '' };
+  try{
+    const raw = localStorage.getItem('eiken_save');
+    if (raw) save = Object.assign(save, JSON.parse(raw));
+  }catch(e){}
+
+  const accents = { ranger: '#5a7a4a', mage: '#5a6f9e', warrior: '#9e4f3f' };
+  document.documentElement.style.setProperty('--accent', accents[save.class] || '#93783a');
+  document.getElementById('hudName').textContent = save.name || 'Traveler';
+
+  // ---------- world / camera setup ----------
+  const world = document.getElementById('world');
+  const character = document.getElementById('character');
+  const port = document.getElementById('port');
+  const arrival = document.getElementById('arrival');
+
+  const WORLD_WIDTH = 2600;
+  const GROUND_MARGIN = 40;
+  let charX = 120;
+  let facing = 1; // 1 = right, -1 = left
+  let arrived = false;
+
+  const keys = {};
+  window.addEventListener('keydown', e => { keys[e.key] = true; });
+  window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+  const leftBtn = document.getElementById('leftBtn');
+  const rightBtn = document.getElementById('rightBtn');
+  let touchLeft = false, touchRight = false;
+  leftBtn.addEventListener('touchstart', e => { e.preventDefault(); touchLeft = true; });
+  leftBtn.addEventListener('touchend', () => touchLeft = false);
+  rightBtn.addEventListener('touchstart', e => { e.preventDefault(); touchRight = true; });
+  rightBtn.addEventListener('touchend', () => touchRight = false);
+
+  const SPEED = 3.2;
+  const portTriggerX = WORLD_WIDTH - 140;
+
+  function update(){
+    const movingLeft = keys['ArrowLeft'] || keys['a'] || keys['A'] || touchLeft;
+    const movingRight = keys['ArrowRight'] || keys['d'] || keys['D'] || touchRight;
+    let moving = false;
+
+    if (!arrived){
+      if (movingLeft){ charX -= SPEED; facing = -1; moving = true; }
+      if (movingRight){ charX += SPEED; facing = 1; moving = true; }
+      charX = Math.max(GROUND_MARGIN, Math.min(WORLD_WIDTH - GROUND_MARGIN, charX));
+    }
+
+    character.style.left = charX + 'px';
+    character.classList.toggle('walking', moving);
+    character.classList.toggle('facing-left', facing === -1);
+
+    const viewportWidth = window.innerWidth;
+    let camX = charX - viewportWidth / 2;
+    camX = Math.max(0, Math.min(WORLD_WIDTH - viewportWidth, camX));
+    world.style.transform = `translateX(${-camX}px)`;
+
+    if (!arrived && charX >= portTriggerX){
+      arrived = true;
+      arrival.classList.add('show');
+    }
+
+    requestAnimationFrame(update);
+  }
+  update();
+</script>
+
+</body>
+</html>

@@ -6,7 +6,7 @@
 <title>Eiken — The Falling Star</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root{
     --brass: #c8a24a;
@@ -248,6 +248,194 @@
     border-radius: 4px;
   }
 
+  .reveal-continue{
+    position: absolute;
+    bottom: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--white);
+    background: transparent;
+    border: 1px solid var(--brass);
+    padding: 10px 26px;
+    border-radius: 100px;
+    cursor: pointer;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+    animation-delay: 1s;
+  }
+  .reveal-continue:hover{ background: rgba(200,162,74,0.12); }
+
+  /* ---------- NAMING SCREEN ---------- */
+  .naming-screen{
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(0,0,0,0.86);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    padding: 24px;
+  }
+  .naming-screen.show{ opacity: 1; pointer-events: auto; }
+
+  .naming-screen h2{
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    max-width: 30ch;
+    margin-bottom: 34px;
+  }
+
+  .name-input{
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--brass-dim);
+    color: var(--white);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    text-align: center;
+    padding: 8px 4px;
+    width: min(320px, 80vw);
+    outline: none;
+  }
+  .name-input:focus{ border-bottom-color: var(--brass); }
+  .name-input::placeholder{ color: var(--dim); font-style: italic; }
+
+  .gender-row{
+    margin-top: 30px;
+    display: flex;
+    gap: 14px;
+  }
+  .gender-btn{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--brass-dim);
+    color: var(--white);
+    padding: 10px 24px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .gender-btn:hover{ border-color: var(--brass); background: rgba(200,162,74,0.08); }
+  .gender-btn.selected{ border-color: var(--brass); background: rgba(200,162,74,0.18); }
+
+  .naming-continue{
+    margin-top: 36px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--brass-dim);
+    color: var(--dim);
+    padding: 10px 30px;
+    border-radius: 100px;
+    cursor: not-allowed;
+    opacity: 0.5;
+    transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .naming-continue.ready{
+    cursor: pointer;
+    opacity: 1;
+    color: var(--white);
+    border-color: var(--brass);
+  }
+
+  /* ---------- RETURNING STAR + FLASH ---------- */
+  .return-star{
+    position: fixed;
+    top: 8%;
+    left: 8%;
+    width: 18px;
+    height: 18px;
+    z-index: 30;
+    opacity: 0;
+    transition: transform 1.3s cubic-bezier(0.5,0,0.3,1), opacity 0.4s ease;
+  }
+  .return-star svg{ width: 100%; height: 100%; animation: spin 1.6s linear infinite; }
+  .return-star.show{ opacity: 1; }
+
+  .white-flash{
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .white-flash.show{ opacity: 1; transition: opacity 0.15s ease; }
+
+  .black-out{
+    position: fixed;
+    inset: 0;
+    z-index: 34;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.1s ease;
+  }
+  .black-out.show{ opacity: 1; }
+
+  /* ---------- RETRO DIALOGUE SCREEN ---------- */
+  .dialogue-screen{
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  .dialogue-screen.show{ opacity: 1; pointer-events: auto; }
+
+  .dialogue-box{
+    font-family: 'Press Start 2P', monospace;
+    color: #fff;
+    font-size: clamp(0.85rem, 2vw, 1.15rem);
+    line-height: 2.4;
+    text-align: center;
+    padding: 24px;
+  }
+  .dialogue-box .cursor{
+    display: inline-block;
+    width: 0.6em;
+    animation: blink 0.9s step-end infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0; } }
+
+  .dialogue-continue{
+    display: block;
+    margin: 40px auto 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--brass);
+    color: var(--white);
+    padding: 10px 26px;
+    border-radius: 100px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .dialogue-continue.show{ opacity: 1; }
+
   @media (prefers-reduced-motion: reduce){
     .star-spin{ animation: none; }
     .star-pos{ transition: none; }
@@ -320,6 +508,34 @@
 
 <div class="reveal-card" id="revealCard">
   <img id="revealImg" src="" alt="">
+  <button class="reveal-continue" id="revealContinue">Continue →</button>
+</div>
+
+<div class="naming-screen" id="namingScreen">
+  <h2>What do they call you?</h2>
+  <input class="name-input" id="nameInput" type="text" placeholder="Enter a name" maxlength="18" autocomplete="off">
+  <div class="gender-row">
+    <button class="gender-btn" data-gender="Boy">Boy</button>
+    <button class="gender-btn" data-gender="Girl">Girl</button>
+  </div>
+  <button class="naming-continue" id="namingContinue">Continue</button>
+</div>
+
+<div class="return-star" id="returnStar">
+  <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15,0 C17,11 19,13 30,15 C19,17 17,19 15,30 C13,19 11,17 0,15 C11,13 13,11 15,0 Z" fill="#f4f1ea" stroke="#c8a24a" stroke-width="0.5"/>
+  </svg>
+</div>
+
+<div class="white-flash" id="whiteFlash"></div>
+<div class="black-out" id="blackOut"></div>
+
+<div class="dialogue-screen" id="dialogueScreen">
+  <div class="dialogue-box">
+    <p id="dialogueLine1"></p>
+    <p id="dialogueLine2"></p>
+    <button class="dialogue-continue" id="dialogueContinue">Continue →</button>
+  </div>
 </div>
 
 <script>
@@ -444,7 +660,109 @@
       revealImg.src = `assets/${cls}-card.png`;
       revealImg.alt = `${name} card`;
       revealCard.classList.add('show');
+      window._eikenClass = cls;
     }, 3400);
+  });
+
+  // ---------- reveal card -> naming screen ----------
+  document.getElementById('revealContinue').addEventListener('click', () => {
+    document.getElementById('revealCard').classList.remove('show');
+    document.getElementById('namingScreen').classList.add('show');
+  });
+
+  // ---------- naming screen ----------
+  const nameInput = document.getElementById('nameInput');
+  const genderBtns = document.querySelectorAll('.gender-btn');
+  const namingContinue = document.getElementById('namingContinue');
+  let chosenGender = null;
+
+  function checkNamingReady(){
+    const ready = nameInput.value.trim().length > 0 && chosenGender;
+    namingContinue.classList.toggle('ready', !!ready);
+  }
+  nameInput.addEventListener('input', checkNamingReady);
+  genderBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      genderBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      chosenGender = btn.dataset.gender;
+      checkNamingReady();
+    });
+  });
+
+  namingContinue.addEventListener('click', () => {
+    const finalName = nameInput.value.trim();
+    if (!finalName || !chosenGender) return;
+    runBirthSequence(finalName, chosenGender);
+  });
+
+  // ---------- the star returns, flash, black, typewriter ----------
+  function runBirthSequence(finalName, gender){
+    document.getElementById('namingScreen').classList.remove('show');
+
+    const returnStar = document.getElementById('returnStar');
+    const whiteFlash = document.getElementById('whiteFlash');
+    const blackOut = document.getElementById('blackOut');
+
+    // star appears and flies toward the center of the frame (where the baby sits in the card art)
+    returnStar.classList.add('show');
+    requestAnimationFrame(() => {
+      returnStar.style.transform = `translate(${window.innerWidth/2 - window.innerWidth*0.08 - 9}px, ${window.innerHeight*0.42 - window.innerHeight*0.08 - 9}px) scale(0.4)`;
+    });
+
+    setTimeout(() => { whiteFlash.classList.add('show'); }, 1250);
+    setTimeout(() => {
+      whiteFlash.classList.remove('show');
+      blackOut.classList.add('show');
+    }, 1500);
+
+    setTimeout(() => {
+      document.getElementById('dialogueScreen').classList.add('show');
+      typeDialogue(finalName);
+      // save the choice for later scenes
+      try{
+        localStorage.setItem('eiken_save', JSON.stringify({
+          class: window._eikenClass, name: finalName, gender: gender
+        }));
+      }catch(e){}
+    }, 2600);
+  }
+
+  function typeDialogue(finalName){
+    const line1 = document.getElementById('dialogueLine1');
+    const line2 = document.getElementById('dialogueLine2');
+    const continueBtn = document.getElementById('dialogueContinue');
+    const text1 = `(${finalName})`;
+    const text2 = '15 years later...';
+
+    let i = 0;
+    line1.textContent = '';
+    line2.textContent = '';
+
+    function typeLine1(){
+      if (i <= text1.length){
+        line1.textContent = text1.slice(0, i) + (i < text1.length ? '' : '');
+        i++;
+        setTimeout(typeLine1, 90);
+      } else {
+        setTimeout(typeLine2, 700);
+      }
+    }
+    let j = 0;
+    function typeLine2(){
+      if (j <= text2.length){
+        line2.textContent = text2.slice(0, j);
+        j++;
+        setTimeout(typeLine2, 70);
+      } else {
+        continueBtn.classList.add('show');
+      }
+    }
+    typeLine1();
+  }
+
+  document.getElementById('dialogueContinue').addEventListener('click', () => {
+    window.location.href = 'town.html';
   });
 </script>
 
