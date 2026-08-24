@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eiken — Eternal Island Prefecture</title>
+<meta name="description" content="Eiken: Eternal Island Prefecture. An island still being charted.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-navy: #0c2233;
+    --deep-sea: #0a1b28;
+    --chart-teal: #1e4e4a;
+    --brass: #c8a24a;
+    --brass-dim: #93783a;
+    --rust: #b0563b;
+    --parchment: #ece3cd;
+    --parchment-dim: #b9ae91;
+    --line: rgba(200, 162, 74, 0.22);
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: var(--deep-sea);
+    color: var(--parchment);
+    font-family: 'Work Sans', sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-radial-gradient(circle at 20% 30%, rgba(200,162,74,0.035) 0, rgba(200,162,74,0.035) 1px, transparent 1px, transparent 60px);
+    z-index: 0;
+  }
+  .wrap{ max-width: 1040px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+  header{ padding: 40px 0 8px; display:flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--line); }
+  .mark{ font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.22em; font-size: 0.72rem; color: var(--brass); text-transform: uppercase; }
+  .status-chip{ font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--parchment-dim); border: 1px solid var(--line); padding: 5px 10px; border-radius: 100px; display:inline-flex; align-items:center; gap: 7px; }
+  .status-chip::before{ content:""; width: 6px; height: 6px; border-radius: 50%; background: var(--rust); box-shadow: 0 0 6px var(--rust); }
+  .hero{ padding: 60px 0 20px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center; }
+  h1{ font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: clamp(2.6rem, 5.2vw, 4.1rem); line-height: 1.02; color: var(--parchment); }
+  h1 em{ font-style: italic; color: var(--brass); }
+  .subhead{ margin-top: 18px; max-width: 40ch; color: var(--parchment-dim); font-size: 1.02rem; }
+  .coords{ margin-top: 26px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brass-dim); letter-spacing: 0.05em; }
+  .map-frame{ border: 1px solid var(--line); border-radius: 4px; padding: 14px; position: relative; background: radial-gradient(ellipse at 50% 40%, rgba(30,78,74,0.35), transparent 70%); }
+  .map-frame svg{ width: 100%; height: auto; display:block; }
+  .map-caption{ font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em; color: var(--parchment-dim); text-align: center; margin-top: 10px; text-transform: uppercase; }
+  .section-label{ font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass); margin-bottom: 6px; }
+  .classes{ margin-top: 96px; }
+  .classes h2{ font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.9rem; max-width: 32ch; margin-bottom: 40px; }
+  .class-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .class-card{ border: 1px solid var(--line); border-radius: 3px; padding: 26px 22px 24px; background: linear-gradient(180deg, rgba(30,78,74,0.12), transparent 55%); transition: border-color 0.25s ease, transform 0.25s ease; }
+  .class-card:hover{ border-color: var(--brass-dim); transform: translateY(-3px); }
+  .class-glyph{ width: 34px; height: 34px; margin-bottom: 18px; }
+  .class-glyph svg{ width:100%; height:100%; }
+  .class-card h3{ font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.4rem; color: var(--parchment); margin-bottom: 8px; }
+  .class-card p{ color: var(--parchment-dim); font-size: 0.9rem; }
+  .log{ margin-top: 96px; border-top: 1px solid var(--line); padding-top: 34px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 40px; }
+  .log h2{ font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.6rem; }
+  .log-entries{ font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--parchment-dim); }
+  .log-entries div{ display: grid; grid-template-columns: 90px 1fr; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .log-entries div:last-child{ border-bottom: none; }
+  .log-entries span{ color: var(--brass-dim); }
+  footer{ margin-top: 100px; padding: 30px 0 50px; border-top: 1px solid var(--line); display:flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.05em; color: var(--parchment-dim); text-transform: uppercase; }
+  @media (max-width: 760px){ .hero{ grid-template-columns: 1fr; } .class-grid{ grid-template-columns: 1fr; } .log{ grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior: auto; } .class-card{ transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">Eiken · Eternal Island Prefecture</div>
+    <div class="status-chip">Charting in progress</div>
+  </header>
+  <section class="hero">
+    <div>
+      <h1>An island<br>still being <em>drawn</em>.</h1>
+      <p class="subhead">Three paths lead in from the coast. None of them are finished yet — this outpost exists so you can watch the map fill in.</p>
+      <p class="coords">34°N, adrift · survey begun 2026</p>
+    </div>
+    <div class="map-frame">
+      <svg viewBox="0 0 520 480" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hand-drawn map of three island regions connected by dotted routes to a central outpost">
+        <g transform="translate(452,54)" stroke="#c8a24a" stroke-width="1" opacity="0.75">
+          <circle r="22" fill="none"/>
+          <line x1="0" y1="-22" x2="0" y2="22"/>
+          <line x1="-22" y1="0" x2="22" y2="0"/>
+          <path d="M0,-22 L4,-8 L0,-12 L-4,-8 Z" fill="#c8a24a" stroke="none"/>
+          <text x="0" y="-28" fill="#c8a24a" font-family="IBM Plex Mono, monospace" font-size="9" text-anchor="middle">N</text>
+        </g>
+        <g stroke="#1e4e4a" stroke-width="1" opacity="0.5">
+          <path d="M10,120 Q120,110 240,125 T470,115"/>
+          <path d="M0,220 Q140,208 260,222 T500,210"/>
+          <path d="M20,340 Q150,330 280,344 T510,332"/>
+        </g>
+        <g stroke="#93783a" stroke-width="1.4" stroke-dasharray="1 6" stroke-linecap="round">
+          <path d="M260,240 C200,180 150,140 108,96"/>
+          <path d="M260,240 C320,180 370,140 404,96"/>
+          <path d="M260,240 C245,300 235,350 224,392"/>
+        </g>
+        <g transform="translate(260,240)">
+          <circle r="5" fill="#b0563b"/>
+          <circle r="10" fill="none" stroke="#b0563b" stroke-width="1" opacity="0.6"/>
+          <text x="14" y="4" fill="#ece3cd" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="1">OUTPOST</text>
+        </g>
+        <g>
+          <path d="M60,60 C40,50 30,75 42,92 C30,100 34,120 55,122 C75,124 100,112 106,92 C112,72 90,68 60,60 Z" fill="#1e4e4a" opacity="0.55" stroke="#c8a24a" stroke-width="1"/>
+          <text x="70" y="146" fill="#ece3cd" font-family="Cormorant Garamond, serif" font-size="16" text-anchor="middle">Ranger Coast</text>
+        </g>
+        <g>
+          <path d="M382,58 C365,44 340,56 340,78 C328,86 332,108 352,114 C374,120 404,112 412,90 C420,68 402,66 382,58 Z" fill="#1e4e4a" opacity="0.55" stroke="#c8a24a" stroke-width="1"/>
+          <text x="376" y="138" fill="#ece3cd" font-family="Cormorant Garamond, serif" font-size="16" text-anchor="middle">Mage Spire</text>
+        </g>
+        <g>
+          <path d="M182,368 C160,360 150,384 164,400 C152,412 160,432 182,434 C206,436 232,424 236,402 C240,380 214,376 182,368 Z" fill="#1e4e4a" opacity="0.55" stroke="#c8a24a" stroke-width="1"/>
+          <text x="198" y="458" fill="#ece3cd" font-family="Cormorant Garamond, serif" font-size="16" text-anchor="middle">Warrior Hold</text>
+        </g>
+      </svg>
+      <p class="map-caption">Survey map · regions unconfirmed</p>
+    </div>
+  </section>
+  <section class="classes">
+    <div class="section-label">The three coasts</div>
+    <h2>Every crossing starts by picking a shoreline, not a class sheet.</h2>
+    <div class="class-grid">
+      <div class="class-card">
+        <div class="class-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#c8a24a" stroke-width="1.3"><path d="M4 20 L14 4 L16 8 L8 20 Z"/><path d="M13 6 L18 6 L18 11"/></svg></div>
+        <h3>Ranger</h3>
+        <p>Reads the land before the land reads back. Distance is a weapon here, not a retreat.</p>
+      </div>
+      <div class="class-card">
+        <div class="class-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#c8a24a" stroke-width="1.3"><path d="M12 3 L19 7 V13 C19 17 16 20 12 21 C8 20 5 17 5 13 V7 Z"/><path d="M12 8 V15"/></svg></div>
+        <h3>Warrior</h3>
+        <p>First through the gate, last one to fall back. What it lacks in subtlety, it makes up in certainty.</p>
+      </div>
+      <div class="class-card">
+        <div class="class-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#c8a24a" stroke-width="1.3"><circle cx="12" cy="9" r="4"/><path d="M12 13 V21 M9 21 H15"/></svg></div>
+        <h3>Mage</h3>
+        <p>Bends rules the other two coasts have to live inside. The cost of that hasn't been written yet.</p>
+      </div>
+    </div>
+  </section>
+  <section class="log">
+    <div>
+      <div class="section-label">Ship's log</div>
+      <h2>What's actually been built.</h2>
+    </div>
+    <div class="log-entries">
+      <div><span>Aug 26</span> Outpost founded. Pages live at this address.</div>
+      <div><span>Next</span> First combat encounter, sketched in the open.</div>
+      <div><span>Later</span> The three coasts get their own rules.</div>
+    </div>
+  </section>
+  <footer>
+    <div>Eiken — a game being built in public</div>
+    <div>No launch date yet</div>
+  </footer>
+</div>
+</body>
+</html>
