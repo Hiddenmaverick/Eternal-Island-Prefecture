@@ -61,25 +61,26 @@
     position: absolute;
     bottom: 0;
     left: 0;
-    height: 320px;
+    height: 460px;
     width: 2600px;
     will-change: transform;
   }
 
+  /* distant town silhouettes — flat placeholder shapes, swap for real art later */
   .town-silhouette{
     position: absolute;
-    bottom: 90px;
+    bottom: 100px;
     left: 0;
     width: 100%;
-    height: 160px;
+    height: 340px;
     display: flex;
     align-items: flex-end;
-    gap: 26px;
+    gap: 50px;
     opacity: 0.5;
   }
   .town-silhouette div{
     background: #7a8b7c;
-    width: 46px;
+    width: 100px;
   }
 
   .ground{
@@ -87,71 +88,69 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 90px;
+    height: 100px;
     background: var(--ground);
     border-top: 6px solid var(--ground-top);
   }
 
   .port{
     position: absolute;
-    bottom: 90px;
-    right: 40px;
-    width: 220px;
-    height: 130px;
+    bottom: 100px;
+    right: 90px;
+    width: 480px;
+    height: 340px;
   }
   .port .dock{
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 14px;
+    height: 30px;
     background: #5b4632;
   }
   .port .post{
     position: absolute;
-    bottom: 14px;
-    width: 6px;
-    height: 40px;
+    bottom: 30px;
+    width: 14px;
+    height: 100px;
     background: #4a3a29;
   }
-  .port .post:nth-child(2){ left: 10px; }
-  .port .post:nth-child(3){ left: 200px; }
+  .port .post:nth-child(2){ left: 24px; }
+  .port .post:nth-child(3){ left: 436px; }
   .port .mast{
     position: absolute;
-    bottom: 14px;
-    left: 70px;
-    width: 4px;
-    height: 90px;
+    bottom: 30px;
+    left: 160px;
+    width: 9px;
+    height: 220px;
     background: #4a3a29;
   }
   .port .sail{
     position: absolute;
-    bottom: 60px;
-    left: 74px;
-    width: 60px;
-    height: 44px;
+    bottom: 144px;
+    left: 168px;
+    width: 140px;
+    height: 100px;
     background: #ece3cd;
     clip-path: polygon(0 0, 100% 20%, 0 100%);
   }
 
   .character{
     position: absolute;
-    bottom: 90px;
-    width: 22px;
-    height: 46px;
+    bottom: 100px;
     transform: translateX(-50%);
   }
   .character .head{
-    width: 14px; height: 14px;
+    width: 36px; height: 36px;
     border-radius: 50%;
     background: #ece3cd;
     margin: 0 auto;
   }
   .character .body{
-    width: 20px; height: 28px;
-    border-radius: 4px;
+    width: 50px; height: 72px;
+    border-radius: 8px;
     background: var(--accent);
-    margin: 2px auto 0;
+    margin: 3px auto 0;
     transition: transform 0.12s ease;
   }
   .character.walking .body{
@@ -159,12 +158,17 @@
   }
   @keyframes bob{
     0%, 100%{ transform: translateY(0); }
-    50%{ transform: translateY(-3px); }
+    50%{ transform: translateY(-5px); }
   }
   .character.facing-left{ transform: translateX(-50%) scaleX(-1); }
   .character.jumping .body{
     animation: none;
     transform: scaleY(1.08) scaleX(0.94);
+  }
+  .character img{
+    display: block;
+    height: 120px;
+    width: auto;
   }
 
   .controls-hint{
@@ -231,32 +235,32 @@
     pointer-events: none;
   }
   .arrow-shot{
-    width: 26px;
-    height: 5px;
+    width: 68px;
+    height: 13px;
     background: linear-gradient(to right, transparent, #111 30%, #111);
-    border-radius: 2px;
+    border-radius: 3px;
   }
   .spell-shot{
-    width: 30px;
-    height: 30px;
+    width: 78px;
+    height: 78px;
     border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #a9c3ff, #5a6f9e 70%);
-    box-shadow: 0 0 14px rgba(90,111,158,0.8);
+    box-shadow: 0 0 20px rgba(90,111,158,0.8);
   }
 
   .charge-ring{
     position: absolute;
-    width: 30px;
-    height: 30px;
-    margin-left: -15px;
-    border: 2px solid #5a6f9e;
+    width: 78px;
+    height: 78px;
+    margin-left: -39px;
+    border: 3px solid #5a6f9e;
     border-radius: 50%;
     pointer-events: none;
     transform: scale(0.2);
     opacity: 0.7;
   }
   .charge-ring.charging{
-    animation: chargeGrow 3s linear forwards;
+    animation: chargeGrow 2s linear forwards;
   }
   @keyframes chargeGrow{
     0%{ transform: scale(0.2); opacity: 0.5; }
@@ -271,11 +275,11 @@
     position: absolute;
     left: 0;
     bottom: 0;
-    width: 30px;
-    height: 4px;
-    margin-left: -6px;
+    width: 78px;
+    height: 10px;
+    margin-left: -16px;
     background: linear-gradient(to right, transparent, #111, transparent);
-    border-radius: 2px;
+    border-radius: 3px;
     transform-origin: 10% 50%;
     pointer-events: none;
   }
@@ -351,14 +355,14 @@
 <div class="viewport">
   <div class="world" id="world">
     <div class="town-silhouette">
-      <div style="height:90px"></div>
-      <div style="height:130px"></div>
-      <div style="height:70px"></div>
-      <div style="height:110px"></div>
-      <div style="height:80px"></div>
+      <div style="height:200px"></div>
+      <div style="height:290px"></div>
       <div style="height:150px"></div>
-      <div style="height:95px"></div>
-      <div style="height:120px"></div>
+      <div style="height:240px"></div>
+      <div style="height:180px"></div>
+      <div style="height:330px"></div>
+      <div style="height:210px"></div>
+      <div style="height:260px"></div>
     </div>
 
     <div class="ground"></div>
@@ -414,6 +418,30 @@
   document.documentElement.style.setProperty('--accent', accents[save.class] || '#93783a');
   document.getElementById('hudName').textContent = save.name || 'Traveler';
 
+  // ---------- sprite system (currently only mage has real art; others keep the placeholder shape) ----------
+  const SPRITE_SETS = {
+    mage: {
+      right: {
+        idle: 'assets/sprites/mage_right/idle.png',
+        walk: ['assets/sprites/mage_right/walk1.png','assets/sprites/mage_right/walk2.png','assets/sprites/mage_right/walk3.png','assets/sprites/mage_right/walk4.png'],
+        jump: 'assets/sprites/mage_right/jump.png',
+        charge: 'assets/sprites/mage_right/charge.png',
+        cast: 'assets/sprites/mage_right/cast.png'
+      },
+      left: {
+        idle: 'assets/sprites/mage_left/idle.png',
+        walk: ['assets/sprites/mage_left/walk1.png','assets/sprites/mage_left/walk2.png','assets/sprites/mage_left/walk3.png','assets/sprites/mage_left/walk4.png'],
+        jump: 'assets/sprites/mage_left/jump.png',
+        charge: 'assets/sprites/mage_left/charge.png',
+        cast: 'assets/sprites/mage_left/cast.png'
+      }
+    }
+  };
+
+  let spriteSet = null; // the {right, left} pair for the current class, or null if no real art yet
+  let spriteImg = null;
+  let currentFrameKey = '';
+
   // ---------- world / camera setup ----------
   const world = document.getElementById('world');
   const character = document.getElementById('character');
@@ -425,6 +453,27 @@
   let charX = 120;
   let facing = 1; // 1 = right, -1 = left
   let arrived = false;
+
+  function applyCharacterVisualForClass(){
+    spriteSet = SPRITE_SETS[save.class] || null;
+    currentFrameKey = '';
+    character.innerHTML = '';
+    if (spriteSet){
+      spriteImg = document.createElement('img');
+      spriteImg.alt = '';
+      character.appendChild(spriteImg);
+      character.classList.remove('walking', 'jumping', 'facing-left');
+    } else {
+      spriteImg = null;
+      const head = document.createElement('div');
+      head.className = 'head';
+      const body = document.createElement('div');
+      body.className = 'body';
+      character.appendChild(head);
+      character.appendChild(body);
+    }
+  }
+  applyCharacterVisualForClass();
 
   const keys = {};
   window.addEventListener('keydown', e => {
@@ -457,9 +506,9 @@
   attackBtn.addEventListener('touchend', e => { e.preventDefault(); handleAttackEnd(); });
 
   // ---------- jump physics ----------
-  const GROUND_BOTTOM = 90;
-  const GRAVITY = 0.12;
-  const JUMP_POWER = 5;
+  const GROUND_BOTTOM = 100;
+  const GRAVITY = 0.31;
+  const JUMP_POWER = 13;
   let jumpHeight = 0;
   let jumpVelocity = 0;
   let isJumping = false;
@@ -477,7 +526,7 @@
   const CHARGE_TIME = 2000;
   const RANGER_COOLDOWN = 1500; // ms between shots
   const WARRIOR_COOLDOWN = 425; // ms before the next swing can trigger
-  const SLASH_REACH = 24; // distance from character the swing is anchored — this is the effective hitbox range
+  const SLASH_REACH = 62; // distance from character the swing is anchored — this is the effective hitbox range
 
   let isCharging = false;
   let chargeStart = 0;
@@ -485,9 +534,10 @@
   let lastSlashTime = 0;
   let lastRangerShot = 0;
   let nextSlash = 'down';
+  let castPoseUntil = 0;
 
   function torsoY(){
-    return GROUND_BOTTOM + jumpHeight + 22;
+    return GROUND_BOTTOM + jumpHeight + 57;
   }
 
   function spawnProjectile(className, speedMultiplier){
@@ -506,6 +556,7 @@
 
   function fireMageSpell(){
     spawnProjectile('spell-shot', SPELL_SPEED);
+    castPoseUntil = performance.now() + 280;
   }
 
   function doWarriorSlash(){
@@ -588,8 +639,35 @@
     }
   }
 
+  function updateSpriteFrame(moving){
+    if (!spriteSet) return; // no real art for this class yet — placeholder handles itself via CSS classes
+
+    const dir = facing === -1 ? 'left' : 'right';
+    const frames = spriteSet[dir];
+
+    let key, src;
+    if (isJumping){
+      key = 'jump'; src = frames.jump;
+    } else if (performance.now() < castPoseUntil){
+      key = 'cast'; src = frames.cast;
+    } else if (isCharging){
+      key = 'charge'; src = frames.charge;
+    } else if (moving){
+      const idx = Math.floor(performance.now() / 130) % frames.walk.length;
+      key = 'walk' + idx; src = frames.walk[idx];
+    } else {
+      key = 'idle'; src = frames.idle;
+    }
+
+    const fullKey = dir + '_' + key;
+    if (fullKey !== currentFrameKey){
+      currentFrameKey = fullKey;
+      spriteImg.src = src;
+    }
+  }
+
   const SPEED = 1.2;
-  const portTriggerX = WORLD_WIDTH - 140;
+  const portTriggerX = WORLD_WIDTH - 310;
 
   function update(){
     const movingLeft = keys['ArrowLeft'] || keys['a'] || keys['A'] || touchLeft;
@@ -614,9 +692,12 @@
 
     character.style.left = charX + 'px';
     character.style.bottom = (GROUND_BOTTOM + jumpHeight) + 'px';
-    character.classList.toggle('walking', moving && !isJumping);
-    character.classList.toggle('jumping', isJumping);
-    character.classList.toggle('facing-left', facing === -1);
+    if (!spriteSet){
+      character.classList.toggle('facing-left', facing === -1);
+      character.classList.toggle('walking', moving && !isJumping);
+      character.classList.toggle('jumping', isJumping);
+    }
+    updateSpriteFrame(moving && !isJumping);
 
     const viewportWidth = window.innerWidth;
     let camX = charX - viewportWidth / 2;
@@ -642,12 +723,10 @@
     const panel = document.getElementById('creatorPanel');
     const classButtons = document.querySelectorAll('#creatorClassGroup [data-set-class]');
     const skipBtn = document.getElementById('creatorSkipBtn');
-
     function refreshActiveClassButton(){
       classButtons.forEach(b => b.classList.toggle('active', b.dataset.setClass === save.class));
     }
     refreshActiveClassButton();
-
     window.addEventListener('keydown', e => {
       if (e.key !== '`') return;
       const active = document.activeElement;
@@ -655,16 +734,15 @@
       e.preventDefault();
       panel.classList.toggle('show');
     });
-
     classButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         // live-switch only — does not touch eiken_save, so a reload restores the real save
         save.class = btn.dataset.setClass;
         document.documentElement.style.setProperty('--accent', accents[save.class] || '#93783a');
+        applyCharacterVisualForClass();
         refreshActiveClassButton();
       });
     });
-
     skipBtn.addEventListener('click', () => {
       // nudge the character to the next checkpoint and let the normal arrival logic fire
       charX = portTriggerX;
