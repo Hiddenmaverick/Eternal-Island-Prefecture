@@ -518,8 +518,10 @@
 
   const SPRITE_SETS = {
     mage: {
-      left:  { frames: MAGE_FRAMES, mirror: false },
-      right: { frames: MAGE_FRAMES, mirror: true }
+      // the art itself is drawn facing right, despite living in a folder named "mage_left" —
+      // so it's 'left' that needs the flip, not 'right'
+      left:  { frames: MAGE_FRAMES, mirror: true },
+      right: { frames: MAGE_FRAMES, mirror: false }
     }
   };
 
