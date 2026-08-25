@@ -462,6 +462,7 @@
   // during charge than during idle/walk. These heights are pre-measured so the character's actual
   // size stays consistent; only the surrounding effect space grows or shrinks.
   const BASE_SPRITE_HEIGHT = 120;
+  const WALK_CYCLE_MS = 520; // target time for one full stride, regardless of frame count (was 4 frames * 130ms)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
 
   const SPRITE_SETS = {
@@ -475,20 +476,53 @@
           mkFrame('assets/sprites/mage_right/walk4.png', 440, 446)
         ],
         jump: mkFrame('assets/sprites/mage_right/jump.png', 447, 446),
-        charge: mkFrame('assets/sprites/mage_right/charge.png', 557, 446),
-        cast: mkFrame('assets/sprites/mage_right/cast.png', 449, 446)
+        charge: [mkFrame('assets/sprites/mage_right/charge.png', 557, 446)],
+        cast: [mkFrame('assets/sprites/mage_right/cast.png', 449, 446)]
       },
       left: {
         idle: mkFrame('assets/sprites/mage_left/idle.png', 446, 446),
         walk: [
-          mkFrame('assets/sprites/mage_left/walk1.png', 412, 446),
-          mkFrame('assets/sprites/mage_left/walk2.png', 427, 446),
-          mkFrame('assets/sprites/mage_left/walk3.png', 417, 446),
-          mkFrame('assets/sprites/mage_left/walk4.png', 420, 446)
+          mkFrame('assets/sprites/mage_left_v2/walk1.png', 177, 177),
+          mkFrame('assets/sprites/mage_left_v2/walk2.png', 177, 177),
+          mkFrame('assets/sprites/mage_left_v2/walk3.png', 179, 179),
+          mkFrame('assets/sprites/mage_left_v2/walk4.png', 177, 177),
+          mkFrame('assets/sprites/mage_left_v2/walk5.png', 176, 176),
+          mkFrame('assets/sprites/mage_left_v2/walk6.png', 173, 173),
+          mkFrame('assets/sprites/mage_left_v2/walk7.png', 168, 168),
+          mkFrame('assets/sprites/mage_left_v2/walk8.png', 169, 169),
+          mkFrame('assets/sprites/mage_left_v2/walk9.png', 171, 171),
+          mkFrame('assets/sprites/mage_left_v2/walk10.png', 174, 174),
+          mkFrame('assets/sprites/mage_left_v2/walk11.png', 175, 175),
+          mkFrame('assets/sprites/mage_left_v2/walk12.png', 176, 176),
+          mkFrame('assets/sprites/mage_left_v2/walk13.png', 176, 176),
+          mkFrame('assets/sprites/mage_left_v2/walk14.png', 177, 177),
+          mkFrame('assets/sprites/mage_left_v2/walk15.png', 178, 178),
+          mkFrame('assets/sprites/mage_left_v2/walk16.png', 178, 178),
+          mkFrame('assets/sprites/mage_left_v2/walk17.png', 176, 176),
+          mkFrame('assets/sprites/mage_left_v2/walk18.png', 175, 175),
+          mkFrame('assets/sprites/mage_left_v2/walk19.png', 172, 172),
+          mkFrame('assets/sprites/mage_left_v2/walk20.png', 168, 168),
+          mkFrame('assets/sprites/mage_left_v2/walk21.png', 169, 169),
+          mkFrame('assets/sprites/mage_left_v2/walk22.png', 171, 171),
+          mkFrame('assets/sprites/mage_left_v2/walk23.png', 174, 174),
+          mkFrame('assets/sprites/mage_left_v2/walk24.png', 175, 175),
+          mkFrame('assets/sprites/mage_left_v2/walk25.png', 176, 176)
         ],
         jump: mkFrame('assets/sprites/mage_left/jump.png', 386, 446),
-        charge: mkFrame('assets/sprites/mage_left/charge.png', 553, 446),
-        cast: mkFrame('assets/sprites/mage_left/cast.png', 445, 446)
+        charge: [
+          mkFrame('assets/sprites/mage_left_v2/charge1.png', 179, 167),
+          mkFrame('assets/sprites/mage_left_v2/charge2.png', 174, 167),
+          mkFrame('assets/sprites/mage_left_v2/charge3.png', 166, 167),
+          mkFrame('assets/sprites/mage_left_v2/charge4.png', 154, 167),
+          mkFrame('assets/sprites/mage_left_v2/charge5.png', 153, 167),
+          mkFrame('assets/sprites/mage_left_v2/charge6.png', 153, 167),
+          mkFrame('assets/sprites/mage_left_v2/charge7.png', 158, 167)
+        ],
+        cast: [
+          mkFrame('assets/sprites/mage_left_v2/cast1.png', 164, 167),
+          mkFrame('assets/sprites/mage_left_v2/cast2.png', 218, 167),
+          mkFrame('assets/sprites/mage_left_v2/cast3.png', 220, 167)
+        ]
       }
     }
   };
@@ -496,11 +530,13 @@
   // preload every sprite image up front so the browser has them cached before the player can
   // ever trigger them — without this, the first use of any frame shows a blank/stale gap while
   // it fetches over the network, which is what caused the frozen legs, the vanishing-on-cast,
-  // and the jarring jump-cut once loading finally caught up.
+  // and the jarring jump-cut once loading finally caught up. charge/cast are arrays of frames
+  // now (not a single frame), so they need spreading here too, or the array itself gets pushed
+  // in as one bogus "frame" with no .src and none of those images actually preload.
   function preloadAllSprites(){
     Object.values(SPRITE_SETS).forEach(cls => {
       Object.values(cls).forEach(dirSet => {
-        const frames = [dirSet.idle, ...dirSet.walk, dirSet.jump, dirSet.charge, dirSet.cast];
+        const frames = [dirSet.idle, ...dirSet.walk, dirSet.jump, ...dirSet.charge, ...dirSet.cast];
         frames.forEach(f => { const img = new Image(); img.src = f.src; });
       });
     });
@@ -608,6 +644,8 @@
   let lastRangerShot = 0;
   let nextSlash = 'down';
   let castPoseUntil = 0;
+  let castStart = 0;
+  const CAST_DURATION = 360; // long enough to show all release frames, not just flash through them
 
   function torsoY(){
     return GROUND_BOTTOM + jumpHeight + 57;
@@ -629,7 +667,8 @@
 
   function fireMageSpell(){
     spawnProjectile('spell-shot', SPELL_SPEED);
-    castPoseUntil = performance.now() + 280;
+    castStart = performance.now();
+    castPoseUntil = castStart + CAST_DURATION;
   }
 
   function doWarriorSlash(){
@@ -728,11 +767,19 @@
     if (isJumping){
       key = 'jump'; frame = frames.jump;
     } else if (performance.now() < castPoseUntil){
-      key = 'cast'; frame = frames.cast;
+      const progress = (performance.now() - castStart) / CAST_DURATION;
+      const idx = Math.min(Math.floor(progress * frames.cast.length), frames.cast.length - 1);
+      key = 'cast' + idx; frame = frames.cast[idx];
     } else if (isCharging){
-      key = 'charge'; frame = frames.charge;
+      const progress = (performance.now() - chargeStart) / CHARGE_TIME;
+      const idx = Math.min(Math.floor(progress * frames.charge.length), frames.charge.length - 1);
+      key = 'charge' + idx; frame = frames.charge[idx];
     } else if (moving){
-      const idx = Math.floor(performance.now() / 130) % frames.walk.length;
+      // a full walk cycle always takes the same total time regardless of how many
+      // frames it's built from — otherwise a set with more frames would just walk
+      // slower, which isn't what more frames is supposed to mean
+      const perFrameMs = WALK_CYCLE_MS / frames.walk.length;
+      const idx = Math.floor(performance.now() / perFrameMs) % frames.walk.length;
       key = 'walk' + idx; frame = frames.walk[idx];
     } else {
       key = 'idle'; frame = frames.idle;
