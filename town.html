@@ -66,7 +66,7 @@
     will-change: transform;
   }
 
-  /* distant town silhouettes — flat placeholder shapes, swap for real art later */
+  /* distant town silhouettes — improved placeholder shapes, swap for real art later */
   .town-silhouette{
     position: absolute;
     bottom: 100px;
@@ -76,12 +76,50 @@
     display: flex;
     align-items: flex-end;
     gap: 50px;
-    opacity: 0.5;
+    opacity: 0.88;
   }
   .town-silhouette div{
-    background: #7a8b7c;
+    position: relative;
     width: 100px;
+    background:
+      radial-gradient(circle, #f2c879 0 5px, transparent 5.5px) 20px 24px,
+      radial-gradient(circle, #f2c879 0 5px, transparent 5.5px) 60px 24px,
+      radial-gradient(circle, #f2c879 0 5px, transparent 5.5px) 20px 64px,
+      radial-gradient(circle, #f2c879 0 5px, transparent 5.5px) 60px 64px,
+      #8a7060;
+    background-repeat: repeat-y, repeat-y, repeat-y, repeat-y, no-repeat;
+    background-size: 100px 96px, 100px 96px, 100px 96px, 100px 96px, 100%;
+    border-radius: 2px 2px 0 0;
   }
+  /* roof, via a classic CSS triangle */
+  .town-silhouette div::before{
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 62px solid transparent;
+    border-right: 62px solid transparent;
+    border-bottom: 46px solid #6b4a3a;
+  }
+  /* door */
+  .town-silhouette div::after{
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 26px;
+    height: 42px;
+    background: #4a3226;
+    border-radius: 3px 3px 0 0;
+  }
+  .town-silhouette div:nth-child(3n)   { background-color: #9c7c5c; }
+  .town-silhouette div:nth-child(3n+1) { background-color: #7d8a76; }
+  .town-silhouette div:nth-child(3n+2) { background-color: #8a7060; }
+  .town-silhouette div:nth-child(3n)::before   { border-bottom-color: #5a4030; }
+  .town-silhouette div:nth-child(3n+1)::before { border-bottom-color: #4d5a48; }
 
   .ground{
     position: absolute;
@@ -167,7 +205,6 @@
   }
   .character img{
     display: block;
-    height: 120px;
     width: auto;
   }
 
@@ -419,24 +456,56 @@
   document.getElementById('hudName').textContent = save.name || 'Traveler';
 
   // ---------- sprite system (currently only mage has real art; others keep the placeholder shape) ----------
+  // Each frame carries its own render height, not a flat constant. The source art isn't uniformly
+  // cropped — "charge" includes extra vertical space above the head for the spell glow, so if every
+  // frame rendered at the same fixed height, the character's own body would appear ~25% smaller
+  // during charge than during idle/walk. These heights are pre-measured so the character's actual
+  // size stays consistent; only the surrounding effect space grows or shrinks.
+  const BASE_SPRITE_HEIGHT = 120;
+  function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
+
   const SPRITE_SETS = {
     mage: {
       right: {
-        idle: 'assets/sprites/mage_right/idle.png',
-        walk: ['assets/sprites/mage_right/walk1.png','assets/sprites/mage_right/walk2.png','assets/sprites/mage_right/walk3.png','assets/sprites/mage_right/walk4.png'],
-        jump: 'assets/sprites/mage_right/jump.png',
-        charge: 'assets/sprites/mage_right/charge.png',
-        cast: 'assets/sprites/mage_right/cast.png'
+        idle: mkFrame('assets/sprites/mage_right/idle.png', 446, 446),
+        walk: [
+          mkFrame('assets/sprites/mage_right/walk1.png', 437, 446),
+          mkFrame('assets/sprites/mage_right/walk2.png', 441, 446),
+          mkFrame('assets/sprites/mage_right/walk3.png', 443, 446),
+          mkFrame('assets/sprites/mage_right/walk4.png', 440, 446)
+        ],
+        jump: mkFrame('assets/sprites/mage_right/jump.png', 447, 446),
+        charge: mkFrame('assets/sprites/mage_right/charge.png', 557, 446),
+        cast: mkFrame('assets/sprites/mage_right/cast.png', 449, 446)
       },
       left: {
-        idle: 'assets/sprites/mage_left/idle.png',
-        walk: ['assets/sprites/mage_left/walk1.png','assets/sprites/mage_left/walk2.png','assets/sprites/mage_left/walk3.png','assets/sprites/mage_left/walk4.png'],
-        jump: 'assets/sprites/mage_left/jump.png',
-        charge: 'assets/sprites/mage_left/charge.png',
-        cast: 'assets/sprites/mage_left/cast.png'
+        idle: mkFrame('assets/sprites/mage_left/idle.png', 446, 446),
+        walk: [
+          mkFrame('assets/sprites/mage_left/walk1.png', 412, 446),
+          mkFrame('assets/sprites/mage_left/walk2.png', 427, 446),
+          mkFrame('assets/sprites/mage_left/walk3.png', 417, 446),
+          mkFrame('assets/sprites/mage_left/walk4.png', 420, 446)
+        ],
+        jump: mkFrame('assets/sprites/mage_left/jump.png', 386, 446),
+        charge: mkFrame('assets/sprites/mage_left/charge.png', 553, 446),
+        cast: mkFrame('assets/sprites/mage_left/cast.png', 445, 446)
       }
     }
   };
+
+  // preload every sprite image up front so the browser has them cached before the player can
+  // ever trigger them — without this, the first use of any frame shows a blank/stale gap while
+  // it fetches over the network, which is what caused the frozen legs, the vanishing-on-cast,
+  // and the jarring jump-cut once loading finally caught up.
+  function preloadAllSprites(){
+    Object.values(SPRITE_SETS).forEach(cls => {
+      Object.values(cls).forEach(dirSet => {
+        const frames = [dirSet.idle, ...dirSet.walk, dirSet.jump, dirSet.charge, dirSet.cast];
+        frames.forEach(f => { const img = new Image(); img.src = f.src; });
+      });
+    });
+  }
+  preloadAllSprites();
 
   let spriteSet = null; // the {right, left} pair for the current class, or null if no real art yet
   let spriteImg = null;
@@ -452,6 +521,7 @@
   const GROUND_MARGIN = 40;
   let charX = 120;
   let facing = 1; // 1 = right, -1 = left
+  let lastMovingTime = 0;
   let arrived = false;
 
   function applyCharacterVisualForClass(){
@@ -461,6 +531,9 @@
     if (spriteSet){
       spriteImg = document.createElement('img');
       spriteImg.alt = '';
+      const initial = spriteSet[facing === -1 ? 'left' : 'right'].idle;
+      spriteImg.src = initial.src;
+      spriteImg.style.height = initial.height + 'px';
       character.appendChild(spriteImg);
       character.classList.remove('walking', 'jumping', 'facing-left');
     } else {
@@ -581,11 +654,17 @@
     if (isCharging || arrived) return;
     isCharging = true;
     chargeStart = performance.now();
-    chargeRingEl = document.createElement('div');
-    chargeRingEl.className = 'charge-ring charging';
-    chargeRingEl.style.left = charX + 'px';
-    chargeRingEl.style.bottom = torsoY() + 'px';
-    world.appendChild(chargeRingEl);
+    // the placeholder charge-ring is only needed when there's no real sprite art —
+    // the mage's own charge.png frame already draws a hand-drawn glow, so a second
+    // generic CSS ring stacked on top of it would just be redundant (and was sized
+    // for the old tiny placeholder character, not this one — badly oversized here).
+    if (!spriteSet){
+      chargeRingEl = document.createElement('div');
+      chargeRingEl.className = 'charge-ring charging';
+      chargeRingEl.style.left = charX + 'px';
+      chargeRingEl.style.bottom = torsoY() + 'px';
+      world.appendChild(chargeRingEl);
+    }
   }
 
   function cancelMageCharge(fired){
@@ -632,7 +711,7 @@
 
   function updateCharge(){
     if (!isCharging) return;
-    chargeRingEl.style.left = charX + 'px';
+    if (chargeRingEl) chargeRingEl.style.left = charX + 'px';
     if (performance.now() - chargeStart >= CHARGE_TIME){
       fireMageSpell();
       cancelMageCharge(true);
@@ -645,24 +724,25 @@
     const dir = facing === -1 ? 'left' : 'right';
     const frames = spriteSet[dir];
 
-    let key, src;
+    let key, frame;
     if (isJumping){
-      key = 'jump'; src = frames.jump;
+      key = 'jump'; frame = frames.jump;
     } else if (performance.now() < castPoseUntil){
-      key = 'cast'; src = frames.cast;
+      key = 'cast'; frame = frames.cast;
     } else if (isCharging){
-      key = 'charge'; src = frames.charge;
+      key = 'charge'; frame = frames.charge;
     } else if (moving){
       const idx = Math.floor(performance.now() / 130) % frames.walk.length;
-      key = 'walk' + idx; src = frames.walk[idx];
+      key = 'walk' + idx; frame = frames.walk[idx];
     } else {
-      key = 'idle'; src = frames.idle;
+      key = 'idle'; frame = frames.idle;
     }
 
     const fullKey = dir + '_' + key;
     if (fullKey !== currentFrameKey){
       currentFrameKey = fullKey;
-      spriteImg.src = src;
+      spriteImg.src = frame.src;
+      spriteImg.style.height = frame.height + 'px';
     }
   }
 
@@ -679,6 +759,12 @@
       if (movingRight){ charX += SPEED; facing = 1; moving = true; }
       charX = Math.max(GROUND_MARGIN, Math.min(WORLD_WIDTH - GROUND_MARGIN, charX));
     }
+
+    // bridge tiny gaps (a keyboard's key-up/key-down don't land on the exact same tick when
+    // quickly reversing direction) so the sprite doesn't flash an idle pose mid-turn — this is
+    // purely visual, it doesn't move charX, it just keeps showing a walk frame for ~90ms
+    if (moving) lastMovingTime = performance.now();
+    const inTurnGrace = !moving && (performance.now() - lastMovingTime < 90);
 
     if (isJumping){
       jumpVelocity -= GRAVITY;
@@ -697,7 +783,7 @@
       character.classList.toggle('walking', moving && !isJumping);
       character.classList.toggle('jumping', isJumping);
     }
-    updateSpriteFrame(moving && !isJumping);
+    updateSpriteFrame((moving || inTurnGrace) && !isJumping);
 
     const viewportWidth = window.innerWidth;
     let camX = charX - viewportWidth / 2;
