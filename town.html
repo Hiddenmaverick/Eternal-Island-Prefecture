@@ -462,14 +462,17 @@
   // during charge than during idle/walk. These heights are pre-measured so the character's actual
   // size stays consistent; only the surrounding effect space grows or shrinks.
   const BASE_SPRITE_HEIGHT = 120;
-  const WALK_CYCLE_MS = 520; // target time for one full stride, regardless of frame count (was 4 frames * 130ms)
+  const WALK_CYCLE_MS = 650; // target time for one full stride, regardless of frame count (was 520, slowed ~25% — legs were cycling too fast for the walk speed)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
 
-  // Only left-facing art was ever drawn — the mage_right/ folder (idle/walk1-4/jump/charge/cast)
-  // is now unused. Rather than commission a mirrored right-facing set, the same left-facing
-  // frames are reused for both directions: 'left' renders them as-is, 'right' renders the exact
-  // same images with the sprite <img> itself flipped via CSS, so both directions get the full
-  // 25-frame walk / 7-frame charge / 3-frame cast set from one shared art source.
+  // The mage_right/ folder (idle/walk1-4/jump/charge/cast) is unused — both directions are
+  // rendered from this one frame set, flipped via CSS where needed instead of drawing a
+  // mirrored set. The catch: idle/jump come from the original mage_left art (drawn facing
+  // left, as the folder name says), while walk/charge/cast come from the newer mage_left_v2
+  // art (drawn facing right, DESPITE the folder name — confirmed by testing). Those two art
+  // batches don't share a raw orientation, so the mirror can't be one flag for the whole set —
+  // see nativeDirFor() below, which decides it per frame type against however that type's
+  // art actually faces.
   const MAGE_FRAMES = {
     idle: mkFrame('assets/sprites/mage_left/idle.png', 446, 446),
     walk: [
@@ -517,35 +520,29 @@
   };
 
   const SPRITE_SETS = {
-    mage: {
-      // the art itself is drawn facing right, despite living in a folder named "mage_left" —
-      // so it's 'left' that needs the flip, not 'right'
-      left:  { frames: MAGE_FRAMES, mirror: true },
-      right: { frames: MAGE_FRAMES, mirror: false }
-    }
+    mage: MAGE_FRAMES
   };
+
+  // idle/jump are native to 'left' (original mage_left art); walk/charge/cast are native to
+  // 'right' (mage_left_v2 art). Mirror whenever the direction being rendered doesn't match
+  // whichever way that frame type actually faces.
+  function nativeDirFor(type){
+    return (type === 'idle' || type === 'jump') ? 'left' : 'right';
+  }
 
   // preload every sprite image up front so the browser has them cached before the player can
   // ever trigger them — without this, the first use of any frame shows a blank/stale gap while
   // it fetches over the network, which is what caused the frozen legs, the vanishing-on-cast,
-  // and the jarring jump-cut once loading finally caught up. left/right now share the same
-  // underlying frame set (see MAGE_FRAMES above), so this dedupes by object identity to avoid
-  // preloading the same 35 images twice.
+  // and the jarring jump-cut once loading finally caught up.
   function preloadAllSprites(){
-    const seen = new Set();
-    Object.values(SPRITE_SETS).forEach(cls => {
-      Object.values(cls).forEach(dirSet => {
-        if (seen.has(dirSet.frames)) return;
-        seen.add(dirSet.frames);
-        const frames = dirSet.frames;
-        const list = [frames.idle, ...frames.walk, frames.jump, ...frames.charge, ...frames.cast];
-        list.forEach(f => { const img = new Image(); img.src = f.src; });
-      });
+    Object.values(SPRITE_SETS).forEach(frames => {
+      const list = [frames.idle, ...frames.walk, frames.jump, ...frames.charge, ...frames.cast];
+      list.forEach(f => { const img = new Image(); img.src = f.src; });
     });
   }
   preloadAllSprites();
 
-  let spriteSet = null; // the {left, right} pair for the current class, or null if no real art yet
+  let spriteSet = null; // the frame set for the current class, or null if no real art yet
   let spriteImg = null;
   let currentFrameKey = '';
 
@@ -569,11 +566,11 @@
     if (spriteSet){
       spriteImg = document.createElement('img');
       spriteImg.alt = '';
-      const initialDirSet = spriteSet[facing === -1 ? 'left' : 'right'];
-      const initial = initialDirSet.frames.idle;
+      const initialDir = facing === -1 ? 'left' : 'right';
+      const initial = spriteSet.idle;
       spriteImg.src = initial.src;
       spriteImg.style.height = initial.height + 'px';
-      spriteImg.style.transform = initialDirSet.mirror ? 'scaleX(-1)' : 'none';
+      spriteImg.style.transform = (nativeDirFor('idle') !== initialDir) ? 'scaleX(-1)' : 'none';
       character.appendChild(spriteImg);
       character.classList.remove('walking', 'jumping', 'facing-left');
     } else {
@@ -765,17 +762,18 @@
     if (!spriteSet) return; // no real art for this class yet — placeholder handles itself via CSS classes
 
     const dir = facing === -1 ? 'left' : 'right';
-    const dirSet = spriteSet[dir];
-    const frames = dirSet.frames;
+    const frames = spriteSet;
 
-    let key, frame;
+    let type, key, frame;
     if (isJumping){
-      key = 'jump'; frame = frames.jump;
+      type = 'jump'; key = 'jump'; frame = frames.jump;
     } else if (performance.now() < castPoseUntil){
+      type = 'cast';
       const progress = (performance.now() - castStart) / CAST_DURATION;
       const idx = Math.min(Math.floor(progress * frames.cast.length), frames.cast.length - 1);
       key = 'cast' + idx; frame = frames.cast[idx];
     } else if (isCharging){
+      type = 'charge';
       const progress = (performance.now() - chargeStart) / CHARGE_TIME;
       const idx = Math.min(Math.floor(progress * frames.charge.length), frames.charge.length - 1);
       key = 'charge' + idx; frame = frames.charge[idx];
@@ -783,11 +781,12 @@
       // a full walk cycle always takes the same total time regardless of how many
       // frames it's built from — otherwise a set with more frames would just walk
       // slower, which isn't what more frames is supposed to mean
+      type = 'walk';
       const perFrameMs = WALK_CYCLE_MS / frames.walk.length;
       const idx = Math.floor(performance.now() / perFrameMs) % frames.walk.length;
       key = 'walk' + idx; frame = frames.walk[idx];
     } else {
-      key = 'idle'; frame = frames.idle;
+      type = 'idle'; key = 'idle'; frame = frames.idle;
     }
 
     const fullKey = dir + '_' + key;
@@ -795,7 +794,7 @@
       currentFrameKey = fullKey;
       spriteImg.src = frame.src;
       spriteImg.style.height = frame.height + 'px';
-      spriteImg.style.transform = dirSet.mirror ? 'scaleX(-1)' : 'none';
+      spriteImg.style.transform = (nativeDirFor(type) !== dir) ? 'scaleX(-1)' : 'none';
     }
   }
 
