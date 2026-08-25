@@ -462,7 +462,7 @@
   // during charge than during idle/walk. These heights are pre-measured so the character's actual
   // size stays consistent; only the surrounding effect space grows or shrinks.
   const BASE_SPRITE_HEIGHT = 120;
-  const WALK_CYCLE_MS = 650; // target time for one full stride, regardless of frame count (was 520, slowed ~25% — legs were cycling too fast for the walk speed)
+  const WALK_CYCLE_MS = 975; // target time for one full stride, regardless of frame count (was 650, slowed another ~50%)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
 
   // The mage_right/ folder (idle/walk1-4/jump/charge/cast) is unused — both directions are
@@ -634,6 +634,11 @@
   const ARROW_SPEED = 7;
   const SPELL_SPEED = 6;
   const CHARGE_TIME = 2000;
+  const CHARGE_ANIM_MS = 1500; // target time to cycle all charge frames — kept separate from CHARGE_TIME
+                                // (the gameplay fire delay) so animation pacing and balance tuning don't
+                                // fight each other; sped up ~25% from the 2000ms it was implicitly tied to.
+                                // Runs out before CHARGE_TIME does, so the final "fully charged" frame
+                                // holds for the remainder of the charge — a reasonable telegraph, not a bug.
   const RANGER_COOLDOWN = 1500; // ms between shots
   const WARRIOR_COOLDOWN = 425; // ms before the next swing can trigger
   const SLASH_REACH = 62; // distance from character the swing is anchored — this is the effective hitbox range
@@ -774,7 +779,7 @@
       key = 'cast' + idx; frame = frames.cast[idx];
     } else if (isCharging){
       type = 'charge';
-      const progress = (performance.now() - chargeStart) / CHARGE_TIME;
+      const progress = (performance.now() - chargeStart) / CHARGE_ANIM_MS;
       const idx = Math.min(Math.floor(progress * frames.charge.length), frames.charge.length - 1);
       key = 'charge' + idx; frame = frames.charge[idx];
     } else if (moving){
