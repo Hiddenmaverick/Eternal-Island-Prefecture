@@ -468,6 +468,14 @@
   const IDLE_CYCLE_MS = 2600; // slow, relaxed loop for the standing animation
   const JUMP_ANIM_MS = 1400; // approximates the actual jump arc duration (2 * JUMP_POWER / GRAVITY, in ms)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
+  // bounces 0..length-1..0 instead of hard-cutting back to 0 — used for the float loop so it
+  // reads as a continuous hover (up then back down) rather than a snap-restart
+  function pingPongIndex(step, length){
+    if (length <= 1) return 0;
+    const period = 2 * (length - 1);
+    const phase = step % period;
+    return phase < length ? phase : period - phase;
+  }
 
   const MAGE_FRAMES = {
     idle: [
@@ -784,7 +792,8 @@
       // frames it's built from — otherwise a set with more frames would just walk
       // slower, which isn't what more frames is supposed to mean
       const perFrameMs = WALK_CYCLE_MS / frames.walk.length;
-      const idx = Math.floor(performance.now() / perFrameMs) % frames.walk.length;
+      const step = Math.floor(performance.now() / perFrameMs);
+      const idx = pingPongIndex(step, frames.walk.length);
       key = 'walk' + idx; frame = frames.walk[idx];
     } else {
       const perFrameMs = IDLE_CYCLE_MS / frames.idle.length;
