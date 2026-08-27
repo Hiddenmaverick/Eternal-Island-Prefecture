@@ -277,12 +277,24 @@
     background: linear-gradient(to right, transparent, #111 30%, #111);
     border-radius: 3px;
   }
-  .spell-shot{
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #a9c3ff, #5a6f9e 70%);
-    box-shadow: 0 0 20px rgba(90,111,158,0.8);
+  /* the sprite's glowing core sits flush against the source art's right edge in every
+     frame (zero transparent padding there) — anchoring the <img> by its right edge, inside
+     a wrapper positioned at the projectile's actual x/y, keeps the core fixed at that point
+     regardless of how long the trailing flame is in a given frame. Mirroring the wrapper
+     (not the image) for leftward flight keeps the same anchor point correct in both
+     directions, the same pattern used for the warrior's slash-wrap. */
+  .spell-wrap{
+    position: absolute;
+    pointer-events: none;
+  }
+  .spell-sprite{
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    transform: translateY(50%); /* the core sits ~50% down each frame's height — this centers it on the wrap's anchor row */
+    display: block;
+    width: auto;
+    pointer-events: none;
   }
 
   .charge-ring{
@@ -647,9 +659,30 @@
   }
 
   // ---------- combat ----------
-  const projectiles = []; // {el, x, vx}
+  const projectiles = []; // {el, x, vx} plus, for spell projectiles only: {img, frameStart, lastFrameIdx}
   const ARROW_SPEED = 7;
   const SPELL_SPEED = 6;
+
+  // spell projectile flight sprite — 6 frames, cycled on a forward loop for as long as it's
+  // airborne. Uniform scale-down (not per-frame height-normalized like the character sprites):
+  // the core sphere appears to be a constant raw-pixel size across all 6 source frames, only
+  // the trailing flame's bounding box grows/shrinks, so scaling by each frame's own canvas
+  // height (like the character system does) would be the wrong tool here — it would shrink
+  // the core on the frames with the longest trail, the same mistake fixed for the mage's
+  // charge/cast frames earlier.
+  const SPELL_SPRITE_SCALE = 0.4;
+  const SPELL_FRAME_MS = 70; // within the requested 60-80ms range
+  function mkSpellFrame(src, nativeH){ return { src, height: Math.round(nativeH * SPELL_SPRITE_SCALE) }; }
+  const SPELL_PROJECTILE_FRAMES = [
+    mkSpellFrame('assets/sprites/spell_projectile/f1.png', 148),
+    mkSpellFrame('assets/sprites/spell_projectile/f2.png', 185),
+    mkSpellFrame('assets/sprites/spell_projectile/f3.png', 188),
+    mkSpellFrame('assets/sprites/spell_projectile/f4.png', 222),
+    mkSpellFrame('assets/sprites/spell_projectile/f5.png', 180),
+    mkSpellFrame('assets/sprites/spell_projectile/f6.png', 148)
+  ];
+  SPELL_PROJECTILE_FRAMES.forEach(f => { const img = new Image(); img.src = f.src; }); // preload, same reasoning as preloadAllSprites() above
+
   const CHARGE_TIME = 2000;
   const RANGER_COOLDOWN = 1500; // ms between shots
   const WARRIOR_COOLDOWN = 425; // ms before the next swing can trigger
@@ -683,8 +716,38 @@
     spawnProjectile('arrow-shot', ARROW_SPEED);
   }
 
+  function spawnSpellProjectile(){
+    const startX = charX + facing * 18;
+    const wrap = document.createElement('div');
+    wrap.className = 'projectile spell-wrap';
+    wrap.style.left = startX + 'px';
+    wrap.style.bottom = torsoY() + 'px';
+    if (facing === -1) wrap.style.transform = 'scaleX(-1)'; // flip lives on the wrapper, same pattern as the warrior's slash-wrap
+
+    const img = document.createElement('img');
+    img.className = 'spell-sprite';
+    img.alt = '';
+    wrap.appendChild(img);
+    world.appendChild(wrap);
+
+    const p = { el: wrap, img, x: startX, vx: SPELL_SPEED * facing, frameStart: performance.now(), lastFrameIdx: -1 };
+    projectiles.push(p);
+    updateSpellFrame(p); // set the first frame immediately so it isn't blank for one tick
+  }
+
+  function updateSpellFrame(p){
+    const elapsed = performance.now() - p.frameStart;
+    const idx = Math.floor(elapsed / SPELL_FRAME_MS) % SPELL_PROJECTILE_FRAMES.length;
+    if (idx !== p.lastFrameIdx){
+      p.lastFrameIdx = idx;
+      const frame = SPELL_PROJECTILE_FRAMES[idx];
+      p.img.src = frame.src;
+      p.img.style.height = frame.height + 'px';
+    }
+  }
+
   function fireMageSpell(){
-    spawnProjectile('spell-shot', SPELL_SPEED);
+    spawnSpellProjectile();
     castStart = performance.now();
     castPoseUntil = castStart + CAST_DURATION;
   }
@@ -759,6 +822,7 @@
       const p = projectiles[i];
       p.x += p.vx;
       p.el.style.left = p.x + 'px';
+      if (p.img) updateSpellFrame(p); // only spell projectiles carry .img — arrows are untouched
       if (p.x < -60 || p.x > WORLD_WIDTH + 60){
         p.el.remove();
         projectiles.splice(i, 1);
