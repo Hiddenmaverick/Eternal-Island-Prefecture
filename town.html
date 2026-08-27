@@ -456,85 +456,84 @@
   document.getElementById('hudName').textContent = save.name || 'Traveler';
 
   // ---------- sprite system (currently only mage has real art; others keep the placeholder shape) ----------
-  // Each frame carries its own render height, not a flat constant. The source art isn't uniformly
-  // cropped — "charge" includes extra vertical space above the head for the spell glow, so if every
-  // frame rendered at the same fixed height, the character's own body would appear ~25% smaller
-  // during charge than during idle/walk. These heights are pre-measured so the character's actual
-  // size stays consistent; only the surrounding effect space grows or shrinks.
+  // Only right-facing art exists (mage_left_v3, despite the name — confirmed by testing: it
+  // looks right, not left). Left is the same images mirrored via CSS instead of a second art
+  // set. idle/walk/jump still carry per-frame render heights, since the source canvases genuinely
+  // do vary in padding around a same-scale character. charge/cast do NOT get that treatment —
+  // those frames are a crouching/gathering pose that's actually smaller within its own canvas,
+  // not just cropped tighter, so scaling by canvas height was shrinking an already-compact pose
+  // even further. They render at the flat baseline height instead (idleH == totalH below).
   const BASE_SPRITE_HEIGHT = 120;
   const WALK_CYCLE_MS = 520; // target time for one full stride, regardless of frame count (was 4 frames * 130ms)
   const IDLE_CYCLE_MS = 2600; // slow, relaxed loop for the standing animation
   const JUMP_ANIM_MS = 1400; // approximates the actual jump arc duration (2 * JUMP_POWER / GRAVITY, in ms)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
 
+  const MAGE_FRAMES = {
+    idle: [
+      mkFrame('assets/sprites/mage_left_v3/idle1.png', 419, 419),
+      mkFrame('assets/sprites/mage_left_v3/idle2.png', 419, 419),
+      mkFrame('assets/sprites/mage_left_v3/idle3.png', 419, 419),
+      mkFrame('assets/sprites/mage_left_v3/idle4.png', 419, 419),
+      mkFrame('assets/sprites/mage_left_v3/idle5.png', 409, 419),
+      mkFrame('assets/sprites/mage_left_v3/idle6.png', 414, 419)
+    ],
+    walk: [
+      mkFrame('assets/sprites/mage_left_v3/walk1.png', 387, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk2.png', 313, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk3.png', 392, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk4.png', 376, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk5.png', 383, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk6.png', 323, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk7.png', 390, 419),
+      mkFrame('assets/sprites/mage_left_v3/walk8.png', 381, 419)
+    ],
+    jump: [
+      mkFrame('assets/sprites/mage_left_v3/jump1.png', 355, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump2.png', 310, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump3.png', 273, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump4.png', 368, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump5.png', 348, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump6.png', 333, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump7.png', 282, 419),
+      mkFrame('assets/sprites/mage_left_v3/jump8.png', 365, 419)
+    ],
+    charge: [
+      mkFrame('assets/sprites/mage_left_v3/charge1.png', 334, 334),
+      mkFrame('assets/sprites/mage_left_v3/charge2.png', 293, 293),
+      mkFrame('assets/sprites/mage_left_v3/charge3.png', 260, 260),
+      mkFrame('assets/sprites/mage_left_v3/charge4.png', 284, 284),
+      mkFrame('assets/sprites/mage_left_v3/charge5.png', 363, 363),
+      mkFrame('assets/sprites/mage_left_v3/charge6.png', 413, 413)
+    ],
+    cast: [
+      mkFrame('assets/sprites/mage_left_v3/charge7.png', 444, 444),
+      mkFrame('assets/sprites/mage_left_v3/charge8.png', 394, 394)
+    ]
+  };
+
   const SPRITE_SETS = {
     mage: {
-      right: {
-        idle: [mkFrame('assets/sprites/mage_right/idle.png', 446, 446)],
-        walk: [
-          mkFrame('assets/sprites/mage_right/walk1.png', 437, 446),
-          mkFrame('assets/sprites/mage_right/walk2.png', 441, 446),
-          mkFrame('assets/sprites/mage_right/walk3.png', 443, 446),
-          mkFrame('assets/sprites/mage_right/walk4.png', 440, 446)
-        ],
-        jump: [mkFrame('assets/sprites/mage_right/jump.png', 447, 446)],
-        charge: [mkFrame('assets/sprites/mage_right/charge.png', 557, 446)],
-        cast: [mkFrame('assets/sprites/mage_right/cast.png', 449, 446)]
-      },
-      left: {
-        idle: [
-          mkFrame('assets/sprites/mage_left_v3/idle1.png', 419, 419),
-          mkFrame('assets/sprites/mage_left_v3/idle2.png', 419, 419),
-          mkFrame('assets/sprites/mage_left_v3/idle3.png', 419, 419),
-          mkFrame('assets/sprites/mage_left_v3/idle4.png', 419, 419),
-          mkFrame('assets/sprites/mage_left_v3/idle5.png', 409, 419),
-          mkFrame('assets/sprites/mage_left_v3/idle6.png', 414, 419)
-        ],
-        walk: [
-          mkFrame('assets/sprites/mage_left_v3/walk1.png', 387, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk2.png', 313, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk3.png', 392, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk4.png', 376, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk5.png', 383, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk6.png', 323, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk7.png', 390, 419),
-          mkFrame('assets/sprites/mage_left_v3/walk8.png', 381, 419)
-        ],
-        jump: [
-          mkFrame('assets/sprites/mage_left_v3/jump1.png', 355, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump2.png', 310, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump3.png', 273, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump4.png', 368, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump5.png', 348, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump6.png', 333, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump7.png', 282, 419),
-          mkFrame('assets/sprites/mage_left_v3/jump8.png', 365, 419)
-        ],
-        charge: [
-          mkFrame('assets/sprites/mage_left_v3/charge1.png', 334, 419),
-          mkFrame('assets/sprites/mage_left_v3/charge2.png', 293, 419),
-          mkFrame('assets/sprites/mage_left_v3/charge3.png', 260, 419),
-          mkFrame('assets/sprites/mage_left_v3/charge4.png', 284, 419),
-          mkFrame('assets/sprites/mage_left_v3/charge5.png', 363, 419),
-          mkFrame('assets/sprites/mage_left_v3/charge6.png', 413, 419)
-        ],
-        cast: [
-          mkFrame('assets/sprites/mage_left_v3/charge7.png', 444, 419),
-          mkFrame('assets/sprites/mage_left_v3/charge8.png', 394, 419)
-        ]
-      }
+      right: { frames: MAGE_FRAMES, mirror: false },
+      left:  { frames: MAGE_FRAMES, mirror: true }
     }
   };
 
   // preload every sprite image up front so the browser has them cached before the player can
   // ever trigger them — without this, the first use of any frame shows a blank/stale gap while
   // it fetches over the network, which is what caused the frozen legs, the vanishing-on-cast,
-  // and the jarring jump-cut once loading finally caught up.
+  // and the jarring jump-cut once loading finally caught up. left/right share the same underlying
+  // frame set (see MAGE_FRAMES above), so this dedupes by object identity to avoid preloading
+  // the same 30 images twice.
   function preloadAllSprites(){
+    const seen = new Set();
     Object.values(SPRITE_SETS).forEach(cls => {
       Object.values(cls).forEach(dirSet => {
-        const frames = [...dirSet.idle, ...dirSet.walk, ...dirSet.jump, ...dirSet.charge, ...dirSet.cast];
-        frames.forEach(f => { const img = new Image(); img.src = f.src; });
+        if (seen.has(dirSet.frames)) return;
+        seen.add(dirSet.frames);
+        const frames = dirSet.frames;
+        const list = [...frames.idle, ...frames.walk, ...frames.jump, ...frames.charge, ...frames.cast];
+        list.forEach(f => { const img = new Image(); img.src = f.src; });
       });
     });
   }
@@ -564,9 +563,11 @@
     if (spriteSet){
       spriteImg = document.createElement('img');
       spriteImg.alt = '';
-      const initial = spriteSet[facing === -1 ? 'left' : 'right'].idle[0];
+      const initialDirSet = spriteSet[facing === -1 ? 'left' : 'right'];
+      const initial = initialDirSet.frames.idle[0];
       spriteImg.src = initial.src;
       spriteImg.style.height = initial.height + 'px';
+      spriteImg.style.transform = initialDirSet.mirror ? 'scaleX(-1)' : 'none';
       character.appendChild(spriteImg);
       character.classList.remove('walking', 'jumping', 'facing-left');
     } else {
@@ -760,7 +761,8 @@
     if (!spriteSet) return; // no real art for this class yet — placeholder handles itself via CSS classes
 
     const dir = facing === -1 ? 'left' : 'right';
-    const frames = spriteSet[dir];
+    const dirSet = spriteSet[dir];
+    const frames = dirSet.frames;
 
     let key, frame;
     if (isJumping){
@@ -793,6 +795,7 @@
       currentFrameKey = fullKey;
       spriteImg.src = frame.src;
       spriteImg.style.height = frame.height + 'px';
+      spriteImg.style.transform = dirSet.mirror ? 'scaleX(-1)' : 'none';
     }
   }
 
