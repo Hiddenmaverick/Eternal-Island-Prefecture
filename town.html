@@ -462,87 +462,85 @@
   // during charge than during idle/walk. These heights are pre-measured so the character's actual
   // size stays consistent; only the surrounding effect space grows or shrinks.
   const BASE_SPRITE_HEIGHT = 120;
-  const WALK_CYCLE_MS = 975; // target time for one full stride, regardless of frame count (was 650, slowed another ~50%)
+  const WALK_CYCLE_MS = 520; // target time for one full stride, regardless of frame count (was 4 frames * 130ms)
+  const IDLE_CYCLE_MS = 2600; // slow, relaxed loop for the standing animation
+  const JUMP_ANIM_MS = 1400; // approximates the actual jump arc duration (2 * JUMP_POWER / GRAVITY, in ms)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
 
-  // The mage_right/ folder (idle/walk1-4/jump/charge/cast) is unused — both directions are
-  // rendered from this one frame set, flipped via CSS where needed instead of drawing a
-  // mirrored set. The catch: idle/jump come from the original mage_left art (drawn facing
-  // left, as the folder name says), while walk/charge/cast come from the newer mage_left_v2
-  // art (drawn facing right, DESPITE the folder name — confirmed by testing). Those two art
-  // batches don't share a raw orientation, so the mirror can't be one flag for the whole set —
-  // see nativeDirFor() below, which decides it per frame type against however that type's
-  // art actually faces.
-  const MAGE_FRAMES = {
-    idle: mkFrame('assets/sprites/mage_left/idle.png', 446, 446),
-    walk: [
-      mkFrame('assets/sprites/mage_left_v2/walk1.png', 177, 177),
-      mkFrame('assets/sprites/mage_left_v2/walk2.png', 177, 177),
-      mkFrame('assets/sprites/mage_left_v2/walk3.png', 179, 179),
-      mkFrame('assets/sprites/mage_left_v2/walk4.png', 177, 177),
-      mkFrame('assets/sprites/mage_left_v2/walk5.png', 176, 176),
-      mkFrame('assets/sprites/mage_left_v2/walk6.png', 173, 173),
-      mkFrame('assets/sprites/mage_left_v2/walk7.png', 168, 168),
-      mkFrame('assets/sprites/mage_left_v2/walk8.png', 169, 169),
-      mkFrame('assets/sprites/mage_left_v2/walk9.png', 171, 171),
-      mkFrame('assets/sprites/mage_left_v2/walk10.png', 174, 174),
-      mkFrame('assets/sprites/mage_left_v2/walk11.png', 175, 175),
-      mkFrame('assets/sprites/mage_left_v2/walk12.png', 176, 176),
-      mkFrame('assets/sprites/mage_left_v2/walk13.png', 176, 176),
-      mkFrame('assets/sprites/mage_left_v2/walk14.png', 177, 177),
-      mkFrame('assets/sprites/mage_left_v2/walk15.png', 178, 178),
-      mkFrame('assets/sprites/mage_left_v2/walk16.png', 178, 178),
-      mkFrame('assets/sprites/mage_left_v2/walk17.png', 176, 176),
-      mkFrame('assets/sprites/mage_left_v2/walk18.png', 175, 175),
-      mkFrame('assets/sprites/mage_left_v2/walk19.png', 172, 172),
-      mkFrame('assets/sprites/mage_left_v2/walk20.png', 168, 168),
-      mkFrame('assets/sprites/mage_left_v2/walk21.png', 169, 169),
-      mkFrame('assets/sprites/mage_left_v2/walk22.png', 171, 171),
-      mkFrame('assets/sprites/mage_left_v2/walk23.png', 174, 174),
-      mkFrame('assets/sprites/mage_left_v2/walk24.png', 175, 175),
-      mkFrame('assets/sprites/mage_left_v2/walk25.png', 176, 176)
-    ],
-    jump: mkFrame('assets/sprites/mage_left/jump.png', 386, 446),
-    charge: [
-      mkFrame('assets/sprites/mage_left_v2/charge1.png', 179, 167),
-      mkFrame('assets/sprites/mage_left_v2/charge2.png', 174, 167),
-      mkFrame('assets/sprites/mage_left_v2/charge3.png', 166, 167),
-      mkFrame('assets/sprites/mage_left_v2/charge4.png', 154, 167),
-      mkFrame('assets/sprites/mage_left_v2/charge5.png', 153, 167),
-      mkFrame('assets/sprites/mage_left_v2/charge6.png', 153, 167),
-      mkFrame('assets/sprites/mage_left_v2/charge7.png', 158, 167)
-    ],
-    cast: [
-      mkFrame('assets/sprites/mage_left_v2/cast1.png', 164, 167),
-      mkFrame('assets/sprites/mage_left_v2/cast2.png', 218, 167),
-      mkFrame('assets/sprites/mage_left_v2/cast3.png', 220, 167)
-    ]
-  };
-
   const SPRITE_SETS = {
-    mage: MAGE_FRAMES
+    mage: {
+      right: {
+        idle: [mkFrame('assets/sprites/mage_right/idle.png', 446, 446)],
+        walk: [
+          mkFrame('assets/sprites/mage_right/walk1.png', 437, 446),
+          mkFrame('assets/sprites/mage_right/walk2.png', 441, 446),
+          mkFrame('assets/sprites/mage_right/walk3.png', 443, 446),
+          mkFrame('assets/sprites/mage_right/walk4.png', 440, 446)
+        ],
+        jump: [mkFrame('assets/sprites/mage_right/jump.png', 447, 446)],
+        charge: [mkFrame('assets/sprites/mage_right/charge.png', 557, 446)],
+        cast: [mkFrame('assets/sprites/mage_right/cast.png', 449, 446)]
+      },
+      left: {
+        idle: [
+          mkFrame('assets/sprites/mage_left_v3/idle1.png', 419, 419),
+          mkFrame('assets/sprites/mage_left_v3/idle2.png', 419, 419),
+          mkFrame('assets/sprites/mage_left_v3/idle3.png', 419, 419),
+          mkFrame('assets/sprites/mage_left_v3/idle4.png', 419, 419),
+          mkFrame('assets/sprites/mage_left_v3/idle5.png', 409, 419),
+          mkFrame('assets/sprites/mage_left_v3/idle6.png', 414, 419)
+        ],
+        walk: [
+          mkFrame('assets/sprites/mage_left_v3/walk1.png', 387, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk2.png', 313, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk3.png', 392, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk4.png', 376, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk5.png', 383, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk6.png', 323, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk7.png', 390, 419),
+          mkFrame('assets/sprites/mage_left_v3/walk8.png', 381, 419)
+        ],
+        jump: [
+          mkFrame('assets/sprites/mage_left_v3/jump1.png', 355, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump2.png', 310, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump3.png', 273, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump4.png', 368, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump5.png', 348, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump6.png', 333, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump7.png', 282, 419),
+          mkFrame('assets/sprites/mage_left_v3/jump8.png', 365, 419)
+        ],
+        charge: [
+          mkFrame('assets/sprites/mage_left_v3/charge1.png', 334, 419),
+          mkFrame('assets/sprites/mage_left_v3/charge2.png', 293, 419),
+          mkFrame('assets/sprites/mage_left_v3/charge3.png', 260, 419),
+          mkFrame('assets/sprites/mage_left_v3/charge4.png', 284, 419),
+          mkFrame('assets/sprites/mage_left_v3/charge5.png', 363, 419),
+          mkFrame('assets/sprites/mage_left_v3/charge6.png', 413, 419)
+        ],
+        cast: [
+          mkFrame('assets/sprites/mage_left_v3/charge7.png', 444, 419),
+          mkFrame('assets/sprites/mage_left_v3/charge8.png', 394, 419)
+        ]
+      }
+    }
   };
-
-  // idle/jump are native to 'left' (original mage_left art); walk/charge/cast are native to
-  // 'right' (mage_left_v2 art). Mirror whenever the direction being rendered doesn't match
-  // whichever way that frame type actually faces.
-  function nativeDirFor(type){
-    return (type === 'idle' || type === 'jump') ? 'left' : 'right';
-  }
 
   // preload every sprite image up front so the browser has them cached before the player can
   // ever trigger them — without this, the first use of any frame shows a blank/stale gap while
   // it fetches over the network, which is what caused the frozen legs, the vanishing-on-cast,
   // and the jarring jump-cut once loading finally caught up.
   function preloadAllSprites(){
-    Object.values(SPRITE_SETS).forEach(frames => {
-      const list = [frames.idle, ...frames.walk, frames.jump, ...frames.charge, ...frames.cast];
-      list.forEach(f => { const img = new Image(); img.src = f.src; });
+    Object.values(SPRITE_SETS).forEach(cls => {
+      Object.values(cls).forEach(dirSet => {
+        const frames = [...dirSet.idle, ...dirSet.walk, ...dirSet.jump, ...dirSet.charge, ...dirSet.cast];
+        frames.forEach(f => { const img = new Image(); img.src = f.src; });
+      });
     });
   }
   preloadAllSprites();
 
-  let spriteSet = null; // the frame set for the current class, or null if no real art yet
+  let spriteSet = null; // the {right, left} pair for the current class, or null if no real art yet
   let spriteImg = null;
   let currentFrameKey = '';
 
@@ -566,11 +564,9 @@
     if (spriteSet){
       spriteImg = document.createElement('img');
       spriteImg.alt = '';
-      const initialDir = facing === -1 ? 'left' : 'right';
-      const initial = spriteSet.idle;
+      const initial = spriteSet[facing === -1 ? 'left' : 'right'].idle[0];
       spriteImg.src = initial.src;
       spriteImg.style.height = initial.height + 'px';
-      spriteImg.style.transform = (nativeDirFor('idle') !== initialDir) ? 'scaleX(-1)' : 'none';
       character.appendChild(spriteImg);
       character.classList.remove('walking', 'jumping', 'facing-left');
     } else {
@@ -622,10 +618,12 @@
   let jumpHeight = 0;
   let jumpVelocity = 0;
   let isJumping = false;
+  let jumpStart = 0;
 
   function tryJump(){
     if (isJumping || arrived) return;
     isJumping = true;
+    jumpStart = performance.now();
     jumpVelocity = JUMP_POWER;
   }
 
@@ -634,11 +632,6 @@
   const ARROW_SPEED = 7;
   const SPELL_SPEED = 6;
   const CHARGE_TIME = 2000;
-  const CHARGE_ANIM_MS = 1500; // target time to cycle all charge frames — kept separate from CHARGE_TIME
-                                // (the gameplay fire delay) so animation pacing and balance tuning don't
-                                // fight each other; sped up ~25% from the 2000ms it was implicitly tied to.
-                                // Runs out before CHARGE_TIME does, so the final "fully charged" frame
-                                // holds for the remainder of the charge — a reasonable telegraph, not a bug.
   const RANGER_COOLDOWN = 1500; // ms between shots
   const WARRIOR_COOLDOWN = 425; // ms before the next swing can trigger
   const SLASH_REACH = 62; // distance from character the swing is anchored — this is the effective hitbox range
@@ -767,31 +760,32 @@
     if (!spriteSet) return; // no real art for this class yet — placeholder handles itself via CSS classes
 
     const dir = facing === -1 ? 'left' : 'right';
-    const frames = spriteSet;
+    const frames = spriteSet[dir];
 
-    let type, key, frame;
+    let key, frame;
     if (isJumping){
-      type = 'jump'; key = 'jump'; frame = frames.jump;
+      const progress = (performance.now() - jumpStart) / JUMP_ANIM_MS;
+      const idx = Math.min(Math.floor(progress * frames.jump.length), frames.jump.length - 1);
+      key = 'jump' + idx; frame = frames.jump[idx];
     } else if (performance.now() < castPoseUntil){
-      type = 'cast';
       const progress = (performance.now() - castStart) / CAST_DURATION;
       const idx = Math.min(Math.floor(progress * frames.cast.length), frames.cast.length - 1);
       key = 'cast' + idx; frame = frames.cast[idx];
     } else if (isCharging){
-      type = 'charge';
-      const progress = (performance.now() - chargeStart) / CHARGE_ANIM_MS;
+      const progress = (performance.now() - chargeStart) / CHARGE_TIME;
       const idx = Math.min(Math.floor(progress * frames.charge.length), frames.charge.length - 1);
       key = 'charge' + idx; frame = frames.charge[idx];
     } else if (moving){
       // a full walk cycle always takes the same total time regardless of how many
       // frames it's built from — otherwise a set with more frames would just walk
       // slower, which isn't what more frames is supposed to mean
-      type = 'walk';
       const perFrameMs = WALK_CYCLE_MS / frames.walk.length;
       const idx = Math.floor(performance.now() / perFrameMs) % frames.walk.length;
       key = 'walk' + idx; frame = frames.walk[idx];
     } else {
-      type = 'idle'; key = 'idle'; frame = frames.idle;
+      const perFrameMs = IDLE_CYCLE_MS / frames.idle.length;
+      const idx = Math.floor(performance.now() / perFrameMs) % frames.idle.length;
+      key = 'idle' + idx; frame = frames.idle[idx];
     }
 
     const fullKey = dir + '_' + key;
@@ -799,7 +793,6 @@
       currentFrameKey = fullKey;
       spriteImg.src = frame.src;
       spriteImg.style.height = frame.height + 'px';
-      spriteImg.style.transform = (nativeDirFor(type) !== dir) ? 'scaleX(-1)' : 'none';
     }
   }
 
