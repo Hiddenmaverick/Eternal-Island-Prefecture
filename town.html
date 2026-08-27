@@ -464,7 +464,8 @@
   // not just cropped tighter, so scaling by canvas height was shrinking an already-compact pose
   // even further. They render at the flat baseline height instead (idleH == totalH below).
   const BASE_SPRITE_HEIGHT = 120;
-  const WALK_CYCLE_MS = 520; // target time for one full stride, regardless of frame count (was 4 frames * 130ms)
+  const FLOAT_FRAME_MS = 130; // fixed display time per float frame — independent of movement SPEED, so
+                               // scrolling stays the same while this only controls how fast the pose cycles
   const IDLE_CYCLE_MS = 2600; // slow, relaxed loop for the standing animation
   const JUMP_ANIM_MS = 1400; // approximates the actual jump arc duration (2 * JUMP_POWER / GRAVITY, in ms)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
@@ -568,6 +569,9 @@
   let charX = 120;
   let facing = 1; // 1 = right, -1 = left
   let lastMovingTime = 0;
+  let wasAnimMoving = false; // tracks the (moving || inTurnGrace) value from the previous tick
+  let walkAnimStart = 0;     // timestamp the current unbroken movement segment began — resets the
+                              // float loop back to the foot-down frame each time movement restarts
   let arrived = false;
 
   function applyCharacterVisualForClass(){
@@ -792,13 +796,18 @@
       const idx = Math.min(Math.floor(progress * frames.charge.length), frames.charge.length - 1);
       key = 'charge' + idx; frame = frames.charge[idx];
     } else if (moving){
-      // a full walk cycle always takes the same total time regardless of how many
-      // frames it's built from — otherwise a set with more frames would just walk
-      // slower, which isn't what more frames is supposed to mean
-      const perFrameMs = WALK_CYCLE_MS / frames.walk.length;
-      const step = Math.floor(performance.now() / perFrameMs);
-      const idx = pingPongIndex(step, frames.walk.length);
-      key = 'walk' + idx; frame = frames.walk[idx];
+      // frame 0 is the foot-down/grounded pose — it only plays once, right as movement
+      // begins, then the loop bounces back and forth across the remaining frames without
+      // ever returning to it (until movement stops and restarts)
+      const elapsed = performance.now() - walkAnimStart;
+      if (elapsed < FLOAT_FRAME_MS){
+        key = 'walk0'; frame = frames.walk[0];
+      } else {
+        const rotFrames = frames.walk.length - 1;
+        const step = Math.floor((elapsed - FLOAT_FRAME_MS) / FLOAT_FRAME_MS);
+        const idx = 1 + pingPongIndex(step, rotFrames);
+        key = 'walk' + idx; frame = frames.walk[idx];
+      }
     } else {
       const perFrameMs = IDLE_CYCLE_MS / frames.idle.length;
       const idx = Math.floor(performance.now() / perFrameMs) % frames.idle.length;
@@ -833,6 +842,9 @@
     // purely visual, it doesn't move charX, it just keeps showing a walk frame for ~90ms
     if (moving) lastMovingTime = performance.now();
     const inTurnGrace = !moving && (performance.now() - lastMovingTime < 90);
+    const animMoving = (moving || inTurnGrace) && !isJumping;
+    if (animMoving && !wasAnimMoving) walkAnimStart = performance.now(); // fresh segment — replay foot-down
+    wasAnimMoving = animMoving;
 
     if (isJumping){
       jumpVelocity -= GRAVITY;
@@ -851,7 +863,7 @@
       character.classList.toggle('walking', moving && !isJumping);
       character.classList.toggle('jumping', isJumping);
     }
-    updateSpriteFrame((moving || inTurnGrace) && !isJumping);
+    updateSpriteFrame(animMoving);
 
     const viewportWidth = window.innerWidth;
     let camX = charX - viewportWidth / 2;
