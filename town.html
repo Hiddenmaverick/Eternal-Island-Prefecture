@@ -479,7 +479,7 @@
   const FLOAT_FRAME_MS = 130; // fixed display time per float frame — independent of movement SPEED, so
                                // scrolling stays the same while this only controls how fast the pose cycles
   const IDLE_CYCLE_MS = 2600; // slow, relaxed loop for the standing animation
-  const JUMP_ANIM_MS = 1400; // approximates the actual jump arc duration (2 * JUMP_POWER / GRAVITY, in ms)
+  const JUMP_ANIM_MS = 2100; // approximates the actual jump arc duration (2 * JUMP_POWER / GRAVITY, in ms)
   function mkFrame(src, totalH, idleH){ return { src, height: Math.round(BASE_SPRITE_HEIGHT * (totalH / idleH)) }; }
   // bounces 0..length-1..0 instead of hard-cutting back to 0 — used for the float loop so it
   // reads as a continuous hover (up then back down) rather than a snap-restart
@@ -644,8 +644,8 @@
 
   // ---------- jump physics ----------
   const GROUND_BOTTOM = 100;
-  const GRAVITY = 0.31;
-  const JUMP_POWER = 13;
+  const GRAVITY = 0.103; // lowered ~3x so the arc hangs longer near the apex — reads as floaty
+  const JUMP_POWER = 6.5; // launch speed halved; combined with the lower GRAVITY this nets ~25% less peak height
   let jumpHeight = 0;
   let jumpVelocity = 0;
   let isJumping = false;
