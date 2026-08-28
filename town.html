@@ -683,7 +683,7 @@
   ];
   SPELL_PROJECTILE_FRAMES.forEach(f => { const img = new Image(); img.src = f.src; }); // preload, same reasoning as preloadAllSprites() above
 
-  const CHARGE_TIME = 2000;
+  const CHARGE_TIME = 1000; // halved from 2000 — faster charge-frame cycling + shorter pre-launch delay, per user request
   const RANGER_COOLDOWN = 1500; // ms between shots
   const WARRIOR_COOLDOWN = 425; // ms before the next swing can trigger
   const SLASH_REACH = 62; // distance from character the swing is anchored — this is the effective hitbox range
