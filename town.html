@@ -69,7 +69,7 @@
   /* distant town silhouettes — improved placeholder shapes, swap for real art later */
   .town-silhouette{
     position: absolute;
-    bottom: 100px;
+    bottom: 90px;
     left: 0;
     width: 100%;
     height: 340px;
@@ -126,17 +126,17 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 100px;
+    height: 90px;
     background: var(--ground);
     border-top: 6px solid var(--ground-top);
   }
 
   .port{
     position: absolute;
-    bottom: 100px;
+    bottom: 90px;
     right: 90px;
     width: 480px;
-    height: 340px;
+    height: 360px;
   }
   .port .dock{
     position: absolute;
@@ -404,8 +404,8 @@
 <div class="viewport">
   <div class="world" id="world">
     <div class="town-silhouette">
-      <div style="height:200px"></div>
-      <div style="height:290px"></div>
+      <div style="height:210px"></div>
+      <div style="height:300px"></div>
       <div style="height:150px"></div>
       <div style="height:240px"></div>
       <div style="height:180px"></div>
@@ -467,6 +467,9 @@
   document.documentElement.style.setProperty('--accent', accents[save.class] || '#93783a');
   document.getElementById('hudName').textContent = save.name || 'Traveler';
 
+  // ---------- shared tile unit ----------
+  const TILE = 60; // base unit other sizing constants are now derived from, for consistent asset sizing
+
   // ---------- sprite system (currently only mage has real art; others keep the placeholder shape) ----------
   // Only right-facing art exists (mage_left_v3, despite the name — confirmed by testing: it
   // looks right, not left). Left is the same images mirrored via CSS instead of a second art
@@ -475,7 +478,7 @@
   // those frames are a crouching/gathering pose that's actually smaller within its own canvas,
   // not just cropped tighter, so scaling by canvas height was shrinking an already-compact pose
   // even further. They render at the flat baseline height instead (idleH == totalH below).
-  const BASE_SPRITE_HEIGHT = 120;
+  const BASE_SPRITE_HEIGHT = TILE * 2;
   const FLOAT_FRAME_MS = 130; // fixed display time per float frame — independent of movement SPEED, so
                                // scrolling stays the same while this only controls how fast the pose cycles
   const IDLE_CYCLE_MS = 2600; // slow, relaxed loop for the standing animation
@@ -643,7 +646,7 @@
   attackBtn.addEventListener('touchend', e => { e.preventDefault(); handleAttackEnd(); });
 
   // ---------- jump physics ----------
-  const GROUND_BOTTOM = 100;
+  const GROUND_BOTTOM = TILE * 1.5;
   const GRAVITY = 0.103; // lowered ~3x so the arc hangs longer near the apex — reads as floaty
   const JUMP_POWER = 6.5; // launch speed halved; combined with the lower GRAVITY this nets ~25% less peak height
   let jumpHeight = 0;
