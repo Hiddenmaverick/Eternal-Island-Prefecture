@@ -131,46 +131,17 @@
     border-top: 6px solid var(--ground-top);
   }
 
-  .port{
+  .tavern{
     position: absolute;
-    bottom: 90px;
+    bottom: 90px; /* matches .ground height, 1.5 tiles */
     right: 90px;
-    width: 480px;
-    height: 360px;
+    width: 295px;
+    height: 360px; /* 6 tiles — the hero/destination building, larger than the background silhouettes */
   }
-  .port .dock{
-    position: absolute;
-    bottom: 0;
-    left: 0;
+  .tavern img{
     width: 100%;
-    height: 30px;
-    background: #5b4632;
-  }
-  .port .post{
-    position: absolute;
-    bottom: 30px;
-    width: 14px;
-    height: 100px;
-    background: #4a3a29;
-  }
-  .port .post:nth-child(2){ left: 24px; }
-  .port .post:nth-child(3){ left: 436px; }
-  .port .mast{
-    position: absolute;
-    bottom: 30px;
-    left: 160px;
-    width: 9px;
-    height: 220px;
-    background: #4a3a29;
-  }
-  .port .sail{
-    position: absolute;
-    bottom: 144px;
-    left: 168px;
-    width: 140px;
-    height: 100px;
-    background: #ece3cd;
-    clip-path: polygon(0 0, 100% 20%, 0 100%);
+    height: 100%;
+    display: block;
   }
 
   .character{
@@ -398,7 +369,7 @@
 
 <div class="hud">
   <div id="hudName">Traveler</div>
-  <div class="sub" id="hudSub">walking toward the port</div>
+  <div class="sub" id="hudSub">walking toward the tavern</div>
 </div>
 
 <div class="viewport">
@@ -416,12 +387,8 @@
 
     <div class="ground"></div>
 
-    <div class="port" id="port">
-      <div class="post"></div>
-      <div class="post"></div>
-      <div class="mast"></div>
-      <div class="sail"></div>
-      <div class="dock"></div>
+    <div class="tavern" id="tavern">
+      <img src="assets/backgrounds/tavern.png" alt="">
     </div>
 
     <div class="character" id="character">
@@ -440,7 +407,7 @@
 </div>
 
 <div class="arrival" id="arrival">
-  <p id="arrivalText">You've reached the port.<br>(Nothing built past here yet.)</p>
+  <p id="arrivalText">You've reached the tavern.<br>(Nothing built past here yet.)</p>
 </div>
 
 <!-- ============ CREATOR MODE — strip this whole block (CSS + HTML + JS) before ship ============ -->
@@ -576,7 +543,7 @@
   // ---------- world / camera setup ----------
   const world = document.getElementById('world');
   const character = document.getElementById('character');
-  const port = document.getElementById('port');
+  const tavern = document.getElementById('tavern');
   const arrival = document.getElementById('arrival');
 
   const WORLD_WIDTH = 2600;
@@ -891,7 +858,7 @@
   }
 
   const SPEED = 1.2;
-  const portTriggerX = WORLD_WIDTH - 310;
+  const arrivalTriggerX = WORLD_WIDTH - 225; // recalculated for the tavern (right:90, width:295) — was tuned for the old, wider port graphic
 
   function update(){
     const movingLeft = keys['ArrowLeft'] || keys['a'] || keys['A'] || touchLeft;
@@ -937,7 +904,7 @@
     camX = Math.max(0, Math.min(WORLD_WIDTH - viewportWidth, camX));
     world.style.transform = `translateX(${-camX}px)`;
 
-    if (!arrived && charX >= portTriggerX){
+    if (!arrived && charX >= arrivalTriggerX){
       arrived = true;
       arrival.classList.add('show');
     }
@@ -978,7 +945,7 @@
     });
     skipBtn.addEventListener('click', () => {
       // nudge the character to the next checkpoint and let the normal arrival logic fire
-      charX = portTriggerX;
+      charX = arrivalTriggerX;
     });
   })();
   // ============ END CREATOR MODE ============
