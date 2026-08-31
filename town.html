@@ -440,11 +440,12 @@
   // ---------- sprite system (currently only mage has real art; others keep the placeholder shape) ----------
   // Only right-facing art exists (mage_left_v3, despite the name — confirmed by testing: it
   // looks right, not left). Left is the same images mirrored via CSS instead of a second art
-  // set. idle/walk/jump still carry per-frame render heights, since the source canvases genuinely
-  // do vary in padding around a same-scale character. charge/cast do NOT get that treatment —
-  // those frames are a crouching/gathering pose that's actually smaller within its own canvas,
-  // not just cropped tighter, so scaling by canvas height was shrinking an already-compact pose
-  // even further. They render at the flat baseline height instead (idleH == totalH below).
+  // set. idle/walk/jump carry per-frame render heights, since the source canvases genuinely
+  // do vary in padding around a same-scale character (idle scales against a 530 reference
+  // height; walk/jump still scale against 419). charge/cast also scale proportionally against
+  // 530 rather than a flat baseline — the crouch-to-standing pose progression across these
+  // frames is real (charge3 is genuinely crouched low, charge6 is genuinely standing tall), so
+  // apparent size is meant to change frame to frame here, not stay fixed.
   const BASE_SPRITE_HEIGHT = TILE * 2;
   const FLOAT_FRAME_MS = 130; // fixed display time per float frame — independent of movement SPEED, so
                                // scrolling stays the same while this only controls how fast the pose cycles
